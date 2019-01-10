@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>知末的博客</title>
+    <description>欲将心事付瑶琴。知音少，弦断有谁听。</description>
+    <link>http://localhost:4000/</link>
+    <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Thu, 10 Jan 2019 18:26:37 +0800</pubDate>
+    <lastBuildDate>Thu, 10 Jan 2019 18:26:37 +0800</lastBuildDate>
+    <generator>Jekyll v3.8.5</generator>
+    
+      <item>
+        <title>20190109学习总结</title>
+        <description>&lt;h3 id=&quot;阅读内容&quot;&gt;阅读内容&lt;/h3&gt;
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://juejin.im/post/5aa3c7736fb9a028bb189bca&quot;&gt;分布式事务解决方案&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.zhihu.com/question/54105974&quot;&gt;关于CAP的回答&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.zhihu.com/question/64778723&quot;&gt;关于CAP的P的回答&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;总结&quot;&gt;总结&lt;/h3&gt;
+&lt;ol&gt;
+  &lt;li&gt;CAP理论说的什么？
+答：在一个分布式系统中，最多只能满足C、A、P中的两个需求。&lt;/li&gt;
+  &lt;li&gt;CAP中的P是怎么理解的？
+答：P是指分区容忍性。这个分区指的就是网络分区。我们都知道分布式系统一定是有网络通信的，假设现在有A，B两台服务器。A，B之间原本可以进行通信，但是不知道为什么，它们之间的网络链接断掉了。A，B出现了网络分区，这时A有个请求过来，A，B之间需要同步这次数据，但由于A，B之间不能通信，所以C和A就只能二者取其一，假设A处理请求，会导致数据出现不一致。如果A不处理请求的话，A就不可用了。所以，分区容忍性是分布式系统的前提。
+通俗一点的解释，我们可以假设A，B需要网络通信，但由于网络链接断掉了。A，B出现了网络分区，这时候A，B不能通信，数据就不能传输，这个时候就需要A’要和B在同一分区，A’越多，分区容忍性就越高。A和A’需要进行数据同步，C和A就只能二者取其一了。&lt;/li&gt;
+  &lt;li&gt;BASE理论
+答：由于CAP理论中CAP只能取三者取其二。所以我们在业务中往往会牺牲一致性换取可用性。当然这个牺牲一致性不是指真正失去了数据一致性，而是保持最终数据的一致。
+BA：基本可用。表示一段时间内，用户是可以获取返回结果的
+S：软状态。表示&lt;strong&gt;同一数据的不同副本&lt;/strong&gt;的状态，可以不需要实时一致。
+E：最终一致。&lt;strong&gt;同一数据的不同副本&lt;/strong&gt;的状态，可以不需要实时一致，但一定要保证经过一定时间后仍然是一致的。&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+        <pubDate>Wed, 09 Jan 2019 19:05:04 +0800</pubDate>
+        <link>http://localhost:4000/2019/01/20190109%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/01/20190109%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/</guid>
+        
+        <category>学习总结</category>
+        
+        <category>分布式事务</category>
+        
+        
+      </item>
+    
+      <item>
+        <title>20190107学习总结</title>
+        <description>&lt;h3 id=&quot;写在前面&quot;&gt;写在前面&lt;/h3&gt;
+&lt;p&gt;由于今天晚上和Tony老师聊了一会天，导致今天学习的东西有点少。但还是需要总结一下的&lt;/p&gt;
+
+&lt;h3 id=&quot;阅读内容&quot;&gt;阅读内容&lt;/h3&gt;
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://juejin.im/post/5aa3c7736fb9a028bb189bca&quot;&gt;分布式事务解决方案&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.zhihu.com/question/31346392&quot;&gt;关于事务ACID的回答&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;总结&quot;&gt;总结&lt;/h3&gt;
+&lt;ol&gt;
+  &lt;li&gt;为什么需要有分布式事务？
+答：随着微服务架构趋势，各个系统可能有着各自独立的数据库。而现在的数据库系统是不支持跨数据库事务的，他们只支持本地事务。&lt;/li&gt;
+  &lt;li&gt;什么是本地事务？
+答：本地事务是指同一数据库中的一组操作集合，当其中某个操作出现问题时，需要回滚前面的操作行为。也就是说事务一定是一起成功，或者一起失败。&lt;/li&gt;
+  &lt;li&gt;事务的ACID？
+答：参考两篇文章的回答。A是原子性，表示事务要么一起提交，要么一起失败。深入一点就是，记录之前的版本，允许回滚。C是一致性，一个回答说事务开始和结束不会破坏数据的完整性约束，有道理。还有一个回答是事务的开始到结束的中间状态不会被其他事务看到。I是隔离性，古板的回答估计也是事务的执行是相互独立的，它们不会相互干扰，一个事务不会看到另一个正在运行过程中的事务的数据。而沈询大大给的回答是：&lt;strong&gt;适当的破坏一致性来提升性能和并行度&lt;/strong&gt;。D是持久性，指的就是事务一旦提交，就不会出现数据丢失。&lt;/li&gt;
+  &lt;li&gt;事务的隔离级别？
+答：数据库中要求的隔离性是强隔离，但正如那句话说的&lt;strong&gt;适当的破坏一致性来提升性能和并行度&lt;/strong&gt;。所以其实隔离性是分为好几个级别的，读未提交，读已提交，重复读，串行化。这里我想这样写，读写事务之间的锁共享。主要会有：&lt;strong&gt;更新丢失&lt;/strong&gt;，&lt;strong&gt;脏读&lt;/strong&gt;，&lt;strong&gt;重复读&lt;/strong&gt;，&lt;strong&gt;幻读&lt;/strong&gt;等情况出现。读未提交：写写事务没有锁就会出现更新丢失。读已提交：未提交的写事务不允许读事务进入，即可保证不会出现脏读。重复读：读事务不允许写事务进入，即可保证不会出现同一事务两次读到不同的数据的情况。串行：所有事务都必须串行执行。&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+        <pubDate>Mon, 07 Jan 2019 19:55:10 +0800</pubDate>
+        <link>http://localhost:4000/2019/01/20190107%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/01/20190107%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/</guid>
+        
+        <category>学习总结</category>
+        
+        <category>分布式事务</category>
+        
+        
+      </item>
+    
+  </channel>
+</rss>
