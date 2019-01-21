@@ -149,38 +149,35 @@
 </ul>
 
 <h3 id="代码走读">代码走读</h3>
-<ol>
-  <li>首先要明确 TC、TM 和 RM 他们对应的职责和所在的位置。
-    <ul>
-      <li>TC: 事务协调器。负责协调管理全局事务，维护着全局事务的状态信息。</li>
-      <li>TM: 事务管理器。全局事务的边界，负责全局事务的发起和全局事务的提交/回滚。</li>
-      <li>RM: 资源管理器。分支事务的注册，状态汇报。和 TC 通信，被驱动进行分支事务提交/回滚。</li>
-    </ul>
-  </li>
-  <li>代码梳理梳理
-今天我们先走读一下 fescar 事务提交的源码。我们先从 <code class="highlighter-rouge">GlobalTransactionScanner</code> 这个类开始，因为这个类在 Spring 加载时会触发其 <code class="highlighter-rouge">wrapIfNecessary</code> 方法。
-    <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">protected</span> <span class="n">Object</span> <span class="nf">wrapIfNecessary</span><span class="o">(</span><span class="n">Object</span> <span class="n">bean</span><span class="o">,</span> <span class="n">String</span> <span class="n">beanName</span><span class="o">,</span> <span class="n">Object</span> <span class="n">cacheKey</span><span class="o">)</span> <span class="o">{</span>
- <span class="o">...</span>
- <span class="n">GlobalTransactional</span> <span class="n">anno</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="na">getAnnotation</span><span class="o">(</span><span class="n">GlobalTransactional</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
- <span class="k">if</span> <span class="o">(</span><span class="n">anno</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
-     <span class="n">methodDescList</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">makeMethodDesc</span><span class="o">(</span><span class="n">anno</span><span class="o">,</span> <span class="n">method</span><span class="o">));</span>
- <span class="o">}</span>
- <span class="o">...</span>
- <span class="n">interceptor</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GlobalTransactionalInterceptor</span><span class="o">(</span><span class="n">failureHandlerHook</span><span class="o">);</span>
- <span class="c1">// 将interceptor放入bean的AdvisedSupport中</span>
- <span class="k">if</span> <span class="o">(!</span><span class="n">AopUtils</span><span class="o">.</span><span class="na">isAopProxy</span><span class="o">(</span><span class="n">bean</span><span class="o">))</span> <span class="o">{</span>
- <span class="n">bean</span> <span class="o">=</span> <span class="kd">super</span><span class="o">.</span><span class="na">wrapIfNecessary</span><span class="o">(</span><span class="n">bean</span><span class="o">,</span> <span class="n">beanName</span><span class="o">,</span> <span class="n">cacheKey</span><span class="o">);</span>
- <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
- <span class="n">AdvisedSupport</span> <span class="n">advised</span> <span class="o">=</span> <span class="n">getAdvisedSupport</span><span class="o">(</span><span class="n">bean</span><span class="o">);</span>
- <span class="n">Advisor</span><span class="o">[]</span> <span class="n">advisor</span> <span class="o">=</span> <span class="n">buildAdvisors</span><span class="o">(</span><span class="n">beanName</span><span class="o">,</span> <span class="n">getAdvicesAndAdvisorsForBean</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="kc">null</span><span class="o">));</span>
- <span class="k">for</span> <span class="o">(</span><span class="n">Advisor</span> <span class="n">avr</span> <span class="o">:</span> <span class="n">advisor</span><span class="o">)</span> <span class="o">{</span>
-     <span class="n">advised</span><span class="o">.</span><span class="na">addAdvisor</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">avr</span><span class="o">);</span>
- <span class="o">}</span>
- <span class="k">return</span> <span class="n">bean</span><span class="o">;</span>
+<h5 id="1首先要明确-tctm-和-rm-他们对应的职责和所在的位置">1.首先要明确 TC、TM 和 RM 他们对应的职责和所在的位置。</h5>
+<ul>
+  <li>TC: 事务协调器。负责协调管理全局事务，维护着全局事务的状态信息。</li>
+  <li>TM: 事务管理器。全局事务的边界，负责全局事务的发起和全局事务的提交/回滚。</li>
+  <li>RM: 资源管理器。分支事务的注册，状态汇报。和 TC 通信，被驱动进行分支事务提交/回滚。</li>
+</ul>
+
+<h5 id="2代码梳理梳理">2.代码梳理梳理</h5>
+<p>今天我们先走读一下 fescar 事务提交的源码。我们先从 <code class="highlighter-rouge">GlobalTransactionScanner</code> 这个类开始，因为这个类在 Spring 加载时会触发其 <code class="highlighter-rouge">wrapIfNecessary</code> 方法。</p>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">protected</span> <span class="n">Object</span> <span class="nf">wrapIfNecessary</span><span class="o">(</span><span class="n">Object</span> <span class="n">bean</span><span class="o">,</span> <span class="n">String</span> <span class="n">beanName</span><span class="o">,</span> <span class="n">Object</span> <span class="n">cacheKey</span><span class="o">)</span> <span class="o">{</span>
+    <span class="o">...</span>
+    <span class="n">GlobalTransactional</span> <span class="n">anno</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="na">getAnnotation</span><span class="o">(</span><span class="n">GlobalTransactional</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">anno</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">methodDescList</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">makeMethodDesc</span><span class="o">(</span><span class="n">anno</span><span class="o">,</span> <span class="n">method</span><span class="o">));</span>
+    <span class="o">}</span>
+    <span class="o">...</span>
+    <span class="n">interceptor</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GlobalTransactionalInterceptor</span><span class="o">(</span><span class="n">failureHandlerHook</span><span class="o">);</span>
+    <span class="c1">// 将interceptor放入bean的AdvisedSupport中</span>
+    <span class="k">if</span> <span class="o">(!</span><span class="n">AopUtils</span><span class="o">.</span><span class="na">isAopProxy</span><span class="o">(</span><span class="n">bean</span><span class="o">))</span> <span class="o">{</span>
+    <span class="n">bean</span> <span class="o">=</span> <span class="kd">super</span><span class="o">.</span><span class="na">wrapIfNecessary</span><span class="o">(</span><span class="n">bean</span><span class="o">,</span> <span class="n">beanName</span><span class="o">,</span> <span class="n">cacheKey</span><span class="o">);</span>
+    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+    <span class="n">AdvisedSupport</span> <span class="n">advised</span> <span class="o">=</span> <span class="n">getAdvisedSupport</span><span class="o">(</span><span class="n">bean</span><span class="o">);</span>
+    <span class="n">Advisor</span><span class="o">[]</span> <span class="n">advisor</span> <span class="o">=</span> <span class="n">buildAdvisors</span><span class="o">(</span><span class="n">beanName</span><span class="o">,</span> <span class="n">getAdvicesAndAdvisorsForBean</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="kc">null</span><span class="o">));</span>
+    <span class="k">for</span> <span class="o">(</span><span class="n">Advisor</span> <span class="n">avr</span> <span class="o">:</span> <span class="n">advisor</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">advised</span><span class="o">.</span><span class="na">addAdvisor</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">avr</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="n">bean</span><span class="o">;</span>
 <span class="o">}</span>
-</code></pre></div>    </div>
-  </li>
-</ol>
+</code></pre></div></div>
 
 <p>我们可以看到这里初始化了一个 <code class="highlighter-rouge">GlobalTransactionalInterceptor</code> 全局事务拦截器，并将其放入 bean 中。<code class="highlighter-rouge">GlobalTransactionalInterceptor</code> 接手 Spring 的 AOP 代理后。<code class="highlighter-rouge">invoke</code> 方法如下：</p>
 
