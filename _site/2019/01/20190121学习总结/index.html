@@ -7,16 +7,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
   <title>20190121学习总结</title>
-  <meta name="description" content="阅读内容  fescar概览">
+  <meta name="description" content="阅读内容">
   <meta name="author" content="Wei Wang">
 
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="20190121学习总结">
-  <meta name="twitter:description" content="阅读内容  fescar概览">
+  <meta name="twitter:description" content="阅读内容">
   
   <meta property="og:type" content="article">
   <meta property="og:title" content="20190121学习总结">
-  <meta property="og:description" content="阅读内容  fescar概览">
+  <meta property="og:description" content="阅读内容">
   
   <link rel="icon" type="image/png" href="/assets/images/favicon.png" />
   <link href="/assets/images/favicon.png" rel="shortcut icon" type="image/png">
@@ -143,10 +143,12 @@
 
   <section class="post">
     <h3 id="阅读内容">阅读内容</h3>
+
 <ul>
   <li><a href="https://github.com/alibaba/fescar/wiki/%E6%A6%82%E8%A7%88">fescar概览</a></li>
 </ul>
 
+<h3 id="代码走读">代码走读</h3>
 <ol>
   <li>首先要明确 TC、TM 和 RM 他们对应的职责和所在的位置。
     <ul>
@@ -155,7 +157,7 @@
       <li>RM: 资源管理器。分支事务的注册，状态汇报。和 TC 通信，被驱动进行分支事务提交/回滚。</li>
     </ul>
   </li>
-  <li>源码走读
+  <li>代码梳理梳理
 今天我们先走读一下 fescar 事务提交的源码。我们先从 <code class="highlighter-rouge">GlobalTransactionScanner</code> 这个类开始，因为这个类在 Spring 加载时会触发其 <code class="highlighter-rouge">wrapIfNecessary</code> 方法。
     <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">protected</span> <span class="n">Object</span> <span class="nf">wrapIfNecessary</span><span class="o">(</span><span class="n">Object</span> <span class="n">bean</span><span class="o">,</span> <span class="n">String</span> <span class="n">beanName</span><span class="o">,</span> <span class="n">Object</span> <span class="n">cacheKey</span><span class="o">)</span> <span class="o">{</span>
  <span class="o">...</span>
@@ -180,9 +182,8 @@
   </li>
 </ol>
 
-<p>我们可以看到这里初始化了一个 <code class="highlighter-rouge">GlobalTransactionalInterceptor</code> 全局事务拦截器，并将其放入 bean 中。</p>
+<p>我们可以看到这里初始化了一个 <code class="highlighter-rouge">GlobalTransactionalInterceptor</code> 全局事务拦截器，并将其放入 bean 中。<code class="highlighter-rouge">GlobalTransactionalInterceptor</code> 接手 Spring 的 AOP 代理后。<code class="highlighter-rouge">invoke</code> 方法如下：</p>
 
-<p><code class="highlighter-rouge">GlobalTransactionalInterceptor</code> 接手 Spring 的 AOP 代理后。<code class="highlighter-rouge">invoke</code> 方法如下：</p>
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="kd">public</span> <span class="n">Object</span> <span class="nf">invoke</span><span class="o">(</span><span class="kd">final</span> <span class="n">MethodInvocation</span> <span class="n">methodInvocation</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Throwable</span> <span class="o">{</span>
         <span class="kd">final</span> <span class="n">GlobalTransactional</span> <span class="n">anno</span> <span class="o">=</span> <span class="n">getAnnotation</span><span class="o">(</span><span class="n">methodInvocation</span><span class="o">.</span><span class="na">getMethod</span><span class="o">());</span>
         <span class="k">if</span> <span class="o">(</span><span class="n">anno</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
@@ -298,15 +299,15 @@
     <span class="o">}</span>
 </code></pre></div></div>
 
-<p>如果是创建的话，此时 <code class="highlighter-rouge">GlobalTransaction</code> 并没有填充 XID，我们接着看 <code class="highlighter-rouge">GlobalTransaction</code> 的 <code class="highlighter-rouge">begin</code> 方法。</p>
+<p>如果是创建的话，此时 <code class="highlighter-rouge">GlobalTransaction</code> 并没有填充 xid，我们接着看 <code class="highlighter-rouge">GlobalTransaction</code> 的 <code class="highlighter-rouge">begin</code> 方法。</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@Override</span>
     <span class="kd">public</span> <span class="kt">void</span> <span class="nf">begin</span><span class="o">(</span><span class="kt">int</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">String</span> <span class="n">name</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
         <span class="k">if</span> <span class="o">(</span><span class="n">xid</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">role</span> <span class="o">==</span> <span class="n">GlobalTransactionRole</span><span class="o">.</span><span class="na">Launcher</span><span class="o">)</span> <span class="o">{</span>
-            <span class="c1">// TM 通信 TC 开启事务，XID由TC分配。</span>
+            <span class="c1">// TM 通信 TC 开启事务，xid由TC分配。</span>
             <span class="n">xid</span> <span class="o">=</span> <span class="n">transactionManager</span><span class="o">.</span><span class="na">begin</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="n">name</span><span class="o">,</span> <span class="n">timeout</span><span class="o">);</span>
             <span class="n">status</span> <span class="o">=</span> <span class="n">GlobalStatus</span><span class="o">.</span><span class="na">Begin</span><span class="o">;</span>
-            <span class="c1">// 绑定xid</span>
+            <span class="c1">// 绑定xid，用于透传xid。TODO: 后续研究</span>
             <span class="n">RootContext</span><span class="o">.</span><span class="na">bind</span><span class="o">(</span><span class="n">xid</span><span class="o">);</span>
         <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
             <span class="k">if</span> <span class="o">(</span><span class="n">xid</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
@@ -316,6 +317,23 @@
         <span class="o">}</span>
     <span class="o">}</span>
 </code></pre></div></div>
+
+<p>好，看完了事务开启，我们现在看 business.execute() 这个方法，调用全局事务的业务逻辑。这里会触发 RM 的逻辑，我们今天先不做解释。接着往下看，我们今天最主要看提交流程，我们看到 tx.commit() 方法。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">commit</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+        <span class="n">check</span><span class="o">();</span>
+        <span class="c1">// 解绑xid</span>
+        <span class="n">RootContext</span><span class="o">.</span><span class="na">unbind</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">role</span> <span class="o">==</span> <span class="n">GlobalTransactionRole</span><span class="o">.</span><span class="na">Participant</span><span class="o">)</span> <span class="o">{</span>
+            <span class="c1">// Participant has no responsibility of committing</span>
+            <span class="k">return</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="c1">// TM 向 TC 通信，全局事务提交。</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">transactionManager</span><span class="o">.</span><span class="na">commit</span><span class="o">(</span><span class="n">xid</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></div></div>
+
+<p>这样我们就把主线给走完了，具体 RM 和 TC 如何通信，RM 分支事务注册，提交这些细节，请见后续章节。</p>
 
   </section>
 </article>

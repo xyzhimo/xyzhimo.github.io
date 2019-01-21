@@ -172,7 +172,7 @@ E：最终一致。<strong>同一数据的不同副本</strong>的状态，可�
    <div class="read-more-item">
        <span class="read-more-item-dim">最近的文章</span>
        <h2 class="post-list__post-title post-title"><a href="/2019/01/20190121%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/" title="link to 20190121学习总结">20190121学习总结</a></h2>
-       <p class="excerpt">阅读内容  fescar概览  首先要明确 TC、TM 和 RM 他们对应的职责和所在的位置。          TC: 事务协调器。负责协调管理全局事务，维护着全局事务的状态信息。      TM: 事务管理器。全局事务的边界，负责全局事务的发起和全局事务的提交/回滚。      RM: 资源管理器。分支事务的注册，状态汇报。和 TC 通信，被驱动进行分支事务提交/回滚。        源码走读今天我们先走读一下 fescar 事务提交的源码。我们先从 GlobalTransaction...&hellip;</p>
+       <p class="excerpt">阅读内容  fescar概览代码走读  首先要明确 TC、TM 和 RM 他们对应的职责和所在的位置。          TC: 事务协调器。负责协调管理全局事务，维护着全局事务的状态信息。      TM: 事务管理器。全局事务的边界，负责全局事务的发起和全局事务的提交/回滚。      RM: 资源管理器。分支事务的注册，状态汇报。和 TC 通信，被驱动进行分支事务提交/回滚。        代码梳理梳理今天我们先走读一下 fescar 事务提交的源码。我们先从 GlobalTrans...&hellip;</p>
        <div class="post-list__meta"><time datetime="2019-01-21 18:45:04 +0800" class="post-list__meta--date date">2019-01-21</time> &#8226; <span class="post-list__meta--tags tags">学习总结 源码走读</span><a class="btn-border-small" href=/2019/01/20190121%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/>继续阅读</a></div>
    </div>
    
