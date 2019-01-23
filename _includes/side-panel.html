@@ -5,7 +5,7 @@
     <div class="panel-main__content">
 
         <a href="/#blog" title="前往 {{ site.title }} 的主页" class="blog-button"><img src="/assets/images/avatar.jpg" width="80" alt="{{ site.title }} logo" class="panel-cover__logo logo" /></a>
-        <h1 class="panel-cover__title panel-title"><a href="/#blog" title="link to homepage for {{ site.title }}" class="blog-button">{{ site.title }}</a></h1>
+        <h1 style="border-bottom: 0px LightGrey solid;" class="panel-cover__title panel-title"><a href="/#blog" title="link to homepage for {{ site.title }}" class="blog-button">{{ site.title }}</a></h1>
         {% if site.subtitle %}
         <span class="panel-cover__subtitle panel-subtitle">{{site.subtitle}}</span>
         {% endif %}
@@ -31,7 +31,21 @@
           
           <div>{% include social.html %}</div>
         </div>
-      </div>
+
+
+      <!--<div class="p2 wrap"-->
+           <!--style="margin-top: 374px;margin-bottom: -339px;color: #8e908c; font-size: xx-small">-->
+        <!--<small>-->
+          <!--Copyright © thinkinjava.com.-->
+        <!--</small>-->
+        <!--<br/>-->
+        <!--<small>hosted by <a href="https://pages.coding.me" target="_blank"-->
+                            <!--style="color: deepskyblue">Coding Pages</a>, powered-->
+          <!--by <a href="http://jekyllrb.com/" target="_blank" style="color: deepskyblue">Jekyll</a>.-->
+        <!--</small>-->
+      <!--</div>-->
+
+    </div>
     </div>
     
     {% if site.cover_color %}
@@ -40,4 +54,6 @@
     <div class="panel-cover--overlay cover-disabled"></div>
     {% endif %}
   </div>
+
+
 </header>

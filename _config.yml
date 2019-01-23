@@ -17,17 +17,17 @@ highlighter: rouge
 
 # The blog button should not be removed.
 blog_button:
-    title: Blog
+    title: 文章
     description: 技术为主，娱乐为辅
 
 # Navigation buttons in the front page.
-# nav:
-#    - {title: Projects, description: My Projects, url: 'http://project.onevcat.com'}
-    # - {title: Another Button, description: A button, url: 'http://example.com'}
-
+nav:
+#    - {title: 简书, description: My 简书, url: 'https://www.jianshu.com/u/434239413000'}
+#    - {title: 博客园, description: , url: 'http://www.cnblogs.com/stateis0/'}
+#    - {title: 掘金, description: , url: 'https://juejin.im/user/5a59f14af265da3e2d3362e0'}
 # Pagination
-plugins: [jekyll-paginate]
-paginate: 10
+gems: [jekyll-paginate]
+paginate: 200
 paginate_path: "page/:num/"
 
 # Comment

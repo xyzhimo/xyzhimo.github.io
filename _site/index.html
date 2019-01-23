@@ -8,7 +8,7 @@
 
   <title>知末的博客</title>
   <meta name="description" content="欲将心事付瑶琴。知音少，弦断有谁听。">
-  <meta name="author" content="Wei Wang">
+  <meta name="author" content="hello">
 
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="知末的博客">
@@ -46,7 +46,7 @@
     <div class="panel-main__content">
 
         <a href="/#blog" title="前往 知末的博客 的主页" class="blog-button"><img src="/assets/images/avatar.jpg" width="80" alt="知末的博客 logo" class="panel-cover__logo logo" /></a>
-        <h1 class="panel-cover__title panel-title"><a href="/#blog" title="link to homepage for 知末的博客" class="blog-button">知末的博客</a></h1>
+        <h1 style="border-bottom: 0px LightGrey solid;" class="panel-cover__title panel-title"><a href="/#blog" title="link to homepage for 知末的博客" class="blog-button">知末的博客</a></h1>
         
         <hr class="panel-cover__divider" />
         <p class="panel-cover__description">欲将心事付瑶琴。知音少，弦断有谁听。</p>
@@ -58,7 +58,7 @@
           <div>
             <nav class="cover-navigation cover-navigation--primary">
               <ul class="navigation">
-                <li class="navigation__item"><a href="/#blog" title="技术为主，娱乐为辅" class="blog-button">Blog</a></li>
+                <li class="navigation__item"><a href="/#blog" title="技术为主，娱乐为辅" class="blog-button">文章</a></li>
                 
               </ul>
             </nav>
@@ -121,13 +121,29 @@
 </nav>
 </div>
         </div>
-      </div>
+
+
+      <!--<div class="p2 wrap"-->
+           <!--style="margin-top: 374px;margin-bottom: -339px;color: #8e908c; font-size: xx-small">-->
+        <!--<small>-->
+          <!--Copyright © thinkinjava.com.-->
+        <!--</small>-->
+        <!--<br/>-->
+        <!--<small>hosted by <a href="https://pages.coding.me" target="_blank"-->
+                            <!--style="color: deepskyblue">Coding Pages</a>, powered-->
+          <!--by <a href="http://jekyllrb.com/" target="_blank" style="color: deepskyblue">Jekyll</a>.-->
+        <!--</small>-->
+      <!--</div>-->
+
+    </div>
     </div>
     
     
     <div class="panel-cover--overlay cover-disabled"></div>
     
   </div>
+
+
 </header>
 
 
@@ -138,31 +154,31 @@
   <ol class="post-list">
     
     <li>
-      <h2 class="post-list__post-title post-title"><a href="/2019/01/20190122%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/" title="访问 20190122学习总结">20190122学习总结</a></h2>
-      <p class="excerpt">阅读内容  fescar概览代码走读上一章总结我们把主线给走完了，具体 RM 和 TC 如何通信，RM 分支事务注册，提交这些细节，我们还没走读。现在我们就来走读一下这些代码。前一篇总结，我们提了一下 TransactionalTemplate 的 execute 方法，在 execute 里面我们看到了这段执行业务逻辑的代码public Object execute(TransactionalExecutor business) throws TransactionalExecutor....&hellip;</p>
-      <div class="post-list__meta"><time datetime="2019-01-22 18:43:13 +0800" class="post-list__meta--date date">2019-01-22</time> &#8226; <span class="post-list__meta--tags tags">学习总结 源码走读</span><a class="btn-border-small" href=/2019/01/20190122%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/>继续阅读</a></div>
-      <hr class="post-list__divider" />
+      <h2 style="color: #428bca;" class="post-list__post-title post-title"><a style="color: #428bca;" href="/2019/01/20190122%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/" title="访问 20190122学习总结">20190122学习总结</a></h2>
+      <!--<p class="excerpt">...&hellip;</p>-->
+      <!--<div class="post-list__meta"><time datetime="2019-01-22 18:43:13 +0800" class="post-list__meta&#45;&#45;date date">2019-01-22</time> &#8226; <span class="post-list__meta&#45;&#45;tags tags">学习总结 源码走读</span><a class="btn-border-small" href=/2019/01/20190122%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/>点击阅读</a></div>-->
+      <!--<hr class="post-list__divider" />  -->
     </li>
     
     <li>
-      <h2 class="post-list__post-title post-title"><a href="/2019/01/20190121%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/" title="访问 20190121学习总结">20190121学习总结</a></h2>
-      <p class="excerpt">阅读内容  fescar概览代码走读1.首先要明确 TC、TM 和 RM 他们对应的职责和所在的位置。  TC: 事务协调器。负责协调管理全局事务，维护着全局事务的状态信息。  TM: 事务管理器。全局事务的边界，负责全局事务的发起和全局事务的提交/回滚。  RM: 资源管理器。分支事务的注册，状态汇报。和 TC 通信，被驱动进行分支事务提交/回滚。2.代码梳理梳理今天我们先走读一下 fescar 事务提交的源码。我们先从 GlobalTransactionScanner 这个类开始，因为...&hellip;</p>
-      <div class="post-list__meta"><time datetime="2019-01-21 18:45:04 +0800" class="post-list__meta--date date">2019-01-21</time> &#8226; <span class="post-list__meta--tags tags">学习总结 源码走读</span><a class="btn-border-small" href=/2019/01/20190121%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/>继续阅读</a></div>
-      <hr class="post-list__divider" />
+      <h2 style="color: #428bca;" class="post-list__post-title post-title"><a style="color: #428bca;" href="/2019/01/20190121%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/" title="访问 20190121学习总结">20190121学习总结</a></h2>
+      <!--<p class="excerpt">...&hellip;</p>-->
+      <!--<div class="post-list__meta"><time datetime="2019-01-21 18:45:04 +0800" class="post-list__meta&#45;&#45;date date">2019-01-21</time> &#8226; <span class="post-list__meta&#45;&#45;tags tags">学习总结 源码走读</span><a class="btn-border-small" href=/2019/01/20190121%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/>点击阅读</a></div>-->
+      <!--<hr class="post-list__divider" />  -->
     </li>
     
     <li>
-      <h2 class="post-list__post-title post-title"><a href="/2019/01/20190109%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/" title="访问 20190109学习总结">20190109学习总结</a></h2>
-      <p class="excerpt">阅读内容  分布式事务解决方案  关于CAP的回答  关于CAP的P的回答总结  CAP理论说的什么？答：在一个分布式系统中，最多只能满足C、A、P中的两个需求。  CAP中的P是怎么理解的？答：P是指分区容忍性。这个分区指的就是网络分区。我们都知道分布式系统一定是有网络通信的，假设现在有A，B两台服务器。A，B之间原本可以进行通信，但是不知道为什么，它们之间的网络链接断掉了。A，B出现了网络分区，这时A有个请求过来，A，B之间需要同步这次数据，但由于A，B之间不能通信，所以C和A就只能二...&hellip;</p>
-      <div class="post-list__meta"><time datetime="2019-01-09 19:05:04 +0800" class="post-list__meta--date date">2019-01-09</time> &#8226; <span class="post-list__meta--tags tags">学习总结 分布式事务</span><a class="btn-border-small" href=/2019/01/20190109%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/>继续阅读</a></div>
-      <hr class="post-list__divider" />
+      <h2 style="color: #428bca;" class="post-list__post-title post-title"><a style="color: #428bca;" href="/2019/01/20190109%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/" title="访问 20190109学习总结">20190109学习总结</a></h2>
+      <!--<p class="excerpt">...&hellip;</p>-->
+      <!--<div class="post-list__meta"><time datetime="2019-01-09 19:05:04 +0800" class="post-list__meta&#45;&#45;date date">2019-01-09</time> &#8226; <span class="post-list__meta&#45;&#45;tags tags">学习总结 分布式事务</span><a class="btn-border-small" href=/2019/01/20190109%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/>点击阅读</a></div>-->
+      <!--<hr class="post-list__divider" />  -->
     </li>
     
     <li>
-      <h2 class="post-list__post-title post-title"><a href="/2019/01/20190107%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/" title="访问 20190107学习总结">20190107学习总结</a></h2>
-      <p class="excerpt">写在前面由于今天晚上和Tony老师聊了一会天，导致今天学习的东西有点少。但还是需要总结一下的阅读内容  分布式事务解决方案  关于事务ACID的回答总结  为什么需要有分布式事务？答：随着微服务架构趋势，各个系统可能有着各自独立的数据库。而现在的数据库系统是不支持跨数据库事务的，他们只支持本地事务。  什么是本地事务？答：本地事务是指同一数据库中的一组操作集合，当其中某个操作出现问题时，需要回滚前面的操作行为。也就是说事务一定是一起成功，或者一起失败。  事务的ACID？答：参考两篇文章的...&hellip;</p>
-      <div class="post-list__meta"><time datetime="2019-01-07 19:55:10 +0800" class="post-list__meta--date date">2019-01-07</time> &#8226; <span class="post-list__meta--tags tags">学习总结 分布式事务</span><a class="btn-border-small" href=/2019/01/20190107%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/>继续阅读</a></div>
-      <hr class="post-list__divider" />
+      <h2 style="color: #428bca;" class="post-list__post-title post-title"><a style="color: #428bca;" href="/2019/01/20190107%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/" title="访问 20190107学习总结">20190107学习总结</a></h2>
+      <!--<p class="excerpt">...&hellip;</p>-->
+      <!--<div class="post-list__meta"><time datetime="2019-01-07 19:55:10 +0800" class="post-list__meta&#45;&#45;date date">2019-01-07</time> &#8226; <span class="post-list__meta&#45;&#45;tags tags">学习总结 分布式事务</span><a class="btn-border-small" href=/2019/01/20190107%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/>点击阅读</a></div>-->
+      <!--<hr class="post-list__divider" />  -->
     </li>
     
   </ol>
@@ -176,13 +192,20 @@
 </nav>
 
 
+
 </div>
 
             <section class="footer">
     <footer>
-    	<span class="footer__copyright">本站点采用<a href="http://creativecommons.org/licenses/by-nc-sa/4.0/">知识共享 署名-非商业性使用-相同方式共享 4.0 国际 许可协议</a></span>
-        <span class="footer__copyright">由 <a href="https://jekyllrb.com">Jekyll</a> 于 2019-01-22 生成，感谢 <a href="https://www.digitalocean.com/?refcode=30ed2d146762">Digital Ocean</a> 为本站提供稳定的 VPS 服务</span>
-        <span class="footer__copyright">本站采用 <a href="https://github.com/onevcat/vno-jekyll">Vno - Jekyll</a> 作为主题，您可以在 GitHub 找到<a href="https://github.com/onevcat/OneV-s-Den">本站源码</a> - &copy; 2019</span>
+    <div class="p2 wrap">
+    <div class="measure mt1 center">
+      <small>
+       Copyright © songxiaocai.com,
+        <!--hosted by <a href="https://pages.coding.me" target="_blank">Coding Pages</a>, -->
+        powered by <a href="http://jekyllrb.com/" target="_blank">Jekyll</a>.
+      </small>
+    </div>
+  </div>
     </footer>
 </section>
 
