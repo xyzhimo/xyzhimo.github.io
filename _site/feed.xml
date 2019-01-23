@@ -5,12 +5,12 @@
     <description>欲将心事付瑶琴。知音少，弦断有谁听。</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Wed, 23 Jan 2019 10:37:56 +0800</pubDate>
-    <lastBuildDate>Wed, 23 Jan 2019 10:37:56 +0800</lastBuildDate>
+    <pubDate>Wed, 23 Jan 2019 11:15:44 +0800</pubDate>
+    <lastBuildDate>Wed, 23 Jan 2019 11:15:44 +0800</lastBuildDate>
     <generator>Jekyll v3.8.5</generator>
     
       <item>
-        <title>20190122学习总结</title>
+        <title>【略读系列】fescar 源码 ( 二 )</title>
         <description>&lt;h3 id=&quot;阅读内容&quot;&gt;阅读内容&lt;/h3&gt;
 
 &lt;ul&gt;
@@ -316,7 +316,7 @@
 
 &lt;p&gt;这里我们知识走完的分支事务的流程，也就是 RM 的一些代码走读，关于分支事务注册，以及分支事务状态上报，我们后天继续。&lt;/p&gt;
 
-&lt;h3 id=&quot;后续补充&quot;&gt;后续补充&lt;/h3&gt;
+&lt;h1 id=&quot;后续补充&quot;&gt;后续补充&lt;/h1&gt;
 &lt;ol&gt;
   &lt;li&gt;xid的传递&lt;/li&gt;
   &lt;li&gt;全局事务写锁的原理&lt;/li&gt;
@@ -324,10 +324,10 @@
 &lt;/ol&gt;
 </description>
         <pubDate>Tue, 22 Jan 2019 18:43:13 +0800</pubDate>
-        <link>http://localhost:4000/2019/01/20190122%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/</link>
-        <guid isPermaLink="true">http://localhost:4000/2019/01/20190122%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/</guid>
+        <link>http://localhost:4000/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%BA%8C-)/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%BA%8C-)/</guid>
         
-        <category>学习总结</category>
+        <category>略读系列</category>
         
         <category>源码走读</category>
         
@@ -335,7 +335,7 @@
       </item>
     
       <item>
-        <title>20190121学习总结</title>
+        <title>【略读系列】fescar 源码 ( 一 )</title>
         <description>&lt;h3 id=&quot;阅读内容&quot;&gt;阅读内容&lt;/h3&gt;
 
 &lt;ul&gt;
@@ -343,14 +343,14 @@
 &lt;/ul&gt;
 
 &lt;h3 id=&quot;代码走读&quot;&gt;代码走读&lt;/h3&gt;
-&lt;h5 id=&quot;1首先要明确-tctm-和-rm-他们对应的职责和所在的位置&quot;&gt;1.首先要明确 TC、TM 和 RM 他们对应的职责和所在的位置。&lt;/h5&gt;
+&lt;h4 id=&quot;1首先要明确-tctm-和-rm-他们对应的职责和所在的位置&quot;&gt;1.首先要明确 TC、TM 和 RM 他们对应的职责和所在的位置。&lt;/h4&gt;
 &lt;ul&gt;
   &lt;li&gt;TC: 事务协调器。负责协调管理全局事务，维护着全局事务的状态信息。&lt;/li&gt;
   &lt;li&gt;TM: 事务管理器。全局事务的边界，负责全局事务的发起和全局事务的提交/回滚。&lt;/li&gt;
   &lt;li&gt;RM: 资源管理器。分支事务的注册，状态汇报。和 TC 通信，被驱动进行分支事务提交/回滚。&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h5 id=&quot;2代码梳理梳理&quot;&gt;2.代码梳理梳理&lt;/h5&gt;
+&lt;h4 id=&quot;2代码梳理梳理&quot;&gt;2.代码梳理梳理&lt;/h4&gt;
 &lt;p&gt;今天我们先走读一下 fescar 事务提交的源码。我们先从 &lt;code class=&quot;highlighter-rouge&quot;&gt;GlobalTransactionScanner&lt;/code&gt; 这个类开始，因为这个类在 Spring 加载时会触发其 &lt;code class=&quot;highlighter-rouge&quot;&gt;wrapIfNecessary&lt;/code&gt; 方法。&lt;/p&gt;
 &lt;div class=&quot;language-java highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kd&quot;&gt;protected&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Object&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;wrapIfNecessary&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Object&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bean&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;String&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;beanName&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Object&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;cacheKey&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
     &lt;span class=&quot;o&quot;&gt;...&lt;/span&gt;
@@ -527,10 +527,10 @@
 &lt;p&gt;这样我们就把主线给走完了，具体 RM 和 TC 如何通信，RM 分支事务注册，提交这些细节，请见后续章节。&lt;/p&gt;
 </description>
         <pubDate>Mon, 21 Jan 2019 18:45:04 +0800</pubDate>
-        <link>http://localhost:4000/2019/01/20190121%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/</link>
-        <guid isPermaLink="true">http://localhost:4000/2019/01/20190121%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/</guid>
+        <link>http://localhost:4000/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%B8%80-)/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%B8%80-)/</guid>
         
-        <category>学习总结</category>
+        <category>略读系列</category>
         
         <category>源码走读</category>
         
@@ -538,7 +538,7 @@
       </item>
     
       <item>
-        <title>20190109学习总结</title>
+        <title>【略读系列】CAP 理论</title>
         <description>&lt;h3 id=&quot;阅读内容&quot;&gt;阅读内容&lt;/h3&gt;
 &lt;ul&gt;
   &lt;li&gt;&lt;a href=&quot;https://juejin.im/post/5aa3c7736fb9a028bb189bca&quot;&gt;分布式事务解决方案&lt;/a&gt;&lt;/li&gt;
@@ -561,10 +561,10 @@ E：最终一致。&lt;strong&gt;同一数据的不同副本&lt;/strong&gt;的�
 &lt;/ol&gt;
 </description>
         <pubDate>Wed, 09 Jan 2019 19:05:04 +0800</pubDate>
-        <link>http://localhost:4000/2019/01/20190109%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/</link>
-        <guid isPermaLink="true">http://localhost:4000/2019/01/20190109%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/</guid>
+        <link>http://localhost:4000/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-CAP-%E7%90%86%E8%AE%BA/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-CAP-%E7%90%86%E8%AE%BA/</guid>
         
-        <category>学习总结</category>
+        <category>略读系列</category>
         
         <category>分布式事务</category>
         
@@ -572,7 +572,7 @@ E：最终一致。&lt;strong&gt;同一数据的不同副本&lt;/strong&gt;的�
       </item>
     
       <item>
-        <title>20190107学习总结</title>
+        <title>【略读系列】事务的概念</title>
         <description>&lt;h3 id=&quot;写在前面&quot;&gt;写在前面&lt;/h3&gt;
 &lt;p&gt;由于今天晚上和Tony老师聊了一会天，导致今天学习的东西有点少。但还是需要总结一下的&lt;/p&gt;
 
@@ -595,10 +595,10 @@ E：最终一致。&lt;strong&gt;同一数据的不同副本&lt;/strong&gt;的�
 &lt;/ol&gt;
 </description>
         <pubDate>Mon, 07 Jan 2019 19:55:10 +0800</pubDate>
-        <link>http://localhost:4000/2019/01/20190107%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/</link>
-        <guid isPermaLink="true">http://localhost:4000/2019/01/20190107%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/</guid>
+        <link>http://localhost:4000/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-%E4%BA%8B%E5%8A%A1%E7%9A%84%E6%A6%82%E5%BF%B5/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-%E4%BA%8B%E5%8A%A1%E7%9A%84%E6%A6%82%E5%BF%B5/</guid>
         
-        <category>学习总结</category>
+        <category>略读系列</category>
         
         <category>分布式事务</category>
         

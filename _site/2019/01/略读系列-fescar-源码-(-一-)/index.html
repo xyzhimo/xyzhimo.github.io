@@ -6,16 +6,16 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-  <title>20190121学习总结</title>
+  <title>【略读系列】fescar 源码 ( 一 )</title>
   <meta name="description" content="...">
   <meta name="author" content="hello">
 
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="20190121学习总结">
+  <meta name="twitter:title" content="【略读系列】fescar 源码 ( 一 )">
   <meta name="twitter:description" content="...">
   
   <meta property="og:type" content="article">
-  <meta property="og:title" content="20190121学习总结">
+  <meta property="og:title" content="【略读系列】fescar 源码 ( 一 )">
   <meta property="og:description" content="...">
   
   <link rel="icon" type="image/png" href="/assets/images/favicon.png" />
@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="/css/main.css">
   <link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
 
-  <link rel="canonical" href="http://localhost:4000/2019/01/20190121%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/">
+  <link rel="canonical" href="http://localhost:4000/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%B8%80-)/">
   <link rel="alternate" type="application/rss+xml" title="知末的博客" href="http://localhost:4000/feed.xml">
   
   <meta name="google-site-verification" content="1-1ZlHoRvM0T2FqPbW2S-qLgYXN6rsn52kErlMPd_gw" />
@@ -152,9 +152,9 @@
             <article class="post-container post-container--single" itemscope itemtype="http://schema.org/BlogPosting">
   <header class="post-header">
     <div class="post-meta">
-      <time datetime="2019-01-21 18:45:04 +0800" itemprop="datePublished" class="post-meta__date date">2019-01-21</time> &#8226; <span class="post-meta__tags tags">学习总结 源码走读</span>
+      <time datetime="2019-01-21 18:45:04 +0800" itemprop="datePublished" class="post-meta__date date">2019-01-21</time> &#8226; <span class="post-meta__tags tags">略读系列 源码走读</span>
     </div>
-    <h1 class="post-title">20190121学习总结</h1>
+    <h1 class="post-title">【略读系列】fescar 源码 ( 一 )</h1>
   </header>
 
   <section class="post" style="color: black;font-size: 18px">
@@ -165,14 +165,14 @@
 </ul>
 
 <h3 id="代码走读">代码走读</h3>
-<h5 id="1首先要明确-tctm-和-rm-他们对应的职责和所在的位置">1.首先要明确 TC、TM 和 RM 他们对应的职责和所在的位置。</h5>
+<h4 id="1首先要明确-tctm-和-rm-他们对应的职责和所在的位置">1.首先要明确 TC、TM 和 RM 他们对应的职责和所在的位置。</h4>
 <ul>
   <li>TC: 事务协调器。负责协调管理全局事务，维护着全局事务的状态信息。</li>
   <li>TM: 事务管理器。全局事务的边界，负责全局事务的发起和全局事务的提交/回滚。</li>
   <li>RM: 资源管理器。分支事务的注册，状态汇报。和 TC 通信，被驱动进行分支事务提交/回滚。</li>
 </ul>
 
-<h5 id="2代码梳理梳理">2.代码梳理梳理</h5>
+<h4 id="2代码梳理梳理">2.代码梳理梳理</h4>
 <p>今天我们先走读一下 fescar 事务提交的源码。我们先从 <code class="highlighter-rouge">GlobalTransactionScanner</code> 这个类开始，因为这个类在 Spring 加载时会触发其 <code class="highlighter-rouge">wrapIfNecessary</code> 方法。</p>
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">protected</span> <span class="n">Object</span> <span class="nf">wrapIfNecessary</span><span class="o">(</span><span class="n">Object</span> <span class="n">bean</span><span class="o">,</span> <span class="n">String</span> <span class="n">beanName</span><span class="o">,</span> <span class="n">Object</span> <span class="n">cacheKey</span><span class="o">)</span> <span class="o">{</span>
     <span class="o">...</span>
@@ -373,10 +373,10 @@
    <!---->
    <!--<div class="read-more-item">-->
        <!--<span class="read-more-item-dim">最近的文章</span>-->
-       <!--<h2 class="post-list__post-title post-title"><a href="/2019/01/20190122%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/" style="color: #428bca;" title="link to 20190122学习总结">20190122学习总结</a></h2>-->
+       <!--<h2 class="post-list__post-title post-title"><a href="/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%BA%8C-)/" style="color: #428bca;" title="link to 【略读系列】fescar 源码 ( 二 )">【略读系列】fescar 源码 ( 二 )</a></h2>-->
        <!--<p class="excerpt">...&hellip;</p>-->
-       <!--<div class="post-list__meta"><time datetime="2019-01-22 18:43:13 +0800" class="post-list__meta&#45;&#45;date date">2019-01-22</time> &#8226; <span class="post-list__meta&#45;&#45;tags tags">学习总结 源码走读</span>-->
-         <!--&lt;!&ndash;<a class="btn-border-small" href=/2019/01/20190122%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/>点击阅读</a>&ndash;&gt;-->
+       <!--<div class="post-list__meta"><time datetime="2019-01-22 18:43:13 +0800" class="post-list__meta&#45;&#45;date date">2019-01-22</time> &#8226; <span class="post-list__meta&#45;&#45;tags tags">略读系列 源码走读</span>-->
+         <!--&lt;!&ndash;<a class="btn-border-small" href=/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%BA%8C-)/>点击阅读</a>&ndash;&gt;-->
        <!--</div>-->
    <!--</div>-->
    <!---->
@@ -385,10 +385,10 @@
    <!---->
    <!--<div class="read-more-item">-->
        <!--<span class="read-more-item-dim">更早的文章</span>-->
-       <!--<h2 class="post-list__post-title post-title"><a href="/2019/01/20190109%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/" style="color: #428bca; " title="link to 20190109学习总结">20190109学习总结</a></h2>-->
+       <!--<h2 class="post-list__post-title post-title"><a href="/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-CAP-%E7%90%86%E8%AE%BA/" style="color: #428bca; " title="link to 【略读系列】CAP 理论">【略读系列】CAP 理论</a></h2>-->
        <!--<p class="excerpt">...&hellip;</p>-->
-       <!--<div class="post-list__meta"><time datetime="2019-01-09 19:05:04 +0800" class="post-list__meta&#45;&#45;date date">2019-01-09</time> &#8226; <span class="post-list__meta&#45;&#45;tags tags">学习总结 分布式事务</span>-->
-         <!--&lt;!&ndash;<a class="btn-border-small" href=/2019/01/20190109%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/>点击阅读</a>&ndash;&gt;-->
+       <!--<div class="post-list__meta"><time datetime="2019-01-09 19:05:04 +0800" class="post-list__meta&#45;&#45;date date">2019-01-09</time> &#8226; <span class="post-list__meta&#45;&#45;tags tags">略读系列 分布式事务</span>-->
+         <!--&lt;!&ndash;<a class="btn-border-small" href=/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-CAP-%E7%90%86%E8%AE%BA/>点击阅读</a>&ndash;&gt;-->
        <!--</div>-->
 
    <!--</div>-->
@@ -401,8 +401,8 @@
     <script>
     
     var disqus_config = function () {
-        this.page.url = "http://localhost:4000/2019/01/20190121%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/";
-        this.page.identifier = "/2019/01/20190121%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/";
+        this.page.url = "http://localhost:4000/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%B8%80-)/";
+        this.page.identifier = "/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%B8%80-)/";
     };
 
     var disqus_shortname = 'xyzhimo';
