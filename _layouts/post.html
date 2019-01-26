@@ -1,36 +1,49 @@
 ---
 layout: default
 ---
-
-<article class="post-container post-container--single" itemscope itemtype="http://schema.org/BlogPosting">
-  <header class="post-header">
-    <div class="post-meta">
-      <time datetime="{{page.date | date: date_to_xmlschema}}" itemprop="datePublished" class="post-meta__date date">{{page.date | date: "%F"}}</time> &#8226; <span class="post-meta__tags tags">{{page.tags | join:' '}}</span>
+<section class="collection-head small geopattern" data-pattern-id="{{ page.title | truncate: 15, ''}}">
+<div class="container">
+  <div class="columns">
+    <div class="column three-fourths">
+      <div class="collection-title">
+        <h1 class="collection-header">{{ page.title }}</h1>
+        <div class="collection-info">
+          {% if page.date %}
+          <span class="meta-info">
+            <span class="octicon octicon-calendar"></span> {{ page.date | date: "%Y/%m/%d" }}
+          </span>
+          {% endif %}
+          {% for cat in page.categories %}
+          <span class="meta-info">
+            <span class="octicon octicon-file-directory"></span>
+            <a href="{{ site.url }}/categories/#{{ cat }}" title="{{ cat }}">{{ cat }}</a>
+          </span>
+          {% endfor %}
+        </div>
+      </div>
     </div>
-    <h1 class="post-title">{{ page.title }}</h1>
-  </header>
-
-  <section class="post" style="color: black;font-size: 18px">
+  </div>
+</div>
+</section>
+<!-- / .banner -->
+<section class="container content">
+<div class="columns">
+  <div class="column three-fourths" >
+    <article class="article-content markdown-body">
     {{ content }}
-  </section>
-</article>
-<br/>
-
-<!--<h4 style="margin-bottom: 0em; border-bottom: 0px LightGrey solid;">-->
-
-<!--<div class="cc-license py2" style="background: #f4f4f4; -webkit-box-shadow: 0 0 20px 0px #555;border-radius:6px; ">-->
-  <!--<a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">-->
-    <!--<img alt="知识共享许可协议" style="border-radius:6px" src="https://i.creativecommons.org/l/by-sa/4.0/80x15.png" /></a>-->
-  <!--<br />-->
-  <!--<br/>-->
-  <!--&nbsp;&nbsp;&nbsp;&nbsp;本作品由<a style="color: #a0abbb" href="http://thinkinjava.cn" property="cc:attributionName" rel="cc:attributionURL">-->
-  <!--莫那鲁道 </a>创作，采用<a style="color: #a0abbb" rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">-->
-  <!--知识共享署名-相同方式共享 4.0 国际许可协议 </a>进行许可。-->
-  <!--<br/>-->
-  <!--<br/>-->
-<!--</div>-->
-
-<!--</h4>-->
-
-{% include read-more.html %}
-{% include comments.html %}
+    </article>
+    <div class="share">
+      {% include sns-share.html %}
+    </div>
+    <div class="comment">
+      {% include comments.html %}
+    </div>
+  </div>
+  <div class="column one-fourth">
+    {% include sidebar-search.html %}
+    {% include sidebar-qrcode.html %}
+    {% include sidebar-post-nav.html %}
+  </div>
+</div>
+</section>
+<!-- /section.content -->

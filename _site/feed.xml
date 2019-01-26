@@ -5,9 +5,9 @@
     <description>欲将心事付瑶琴。知音少，弦断有谁听。</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sat, 26 Jan 2019 09:50:43 +0800</pubDate>
-    <lastBuildDate>Sat, 26 Jan 2019 09:50:43 +0800</lastBuildDate>
-    <generator>Jekyll v3.8.5</generator>
+    <pubDate>Sat, 26 Jan 2019 11:38:11 +0800</pubDate>
+    <lastBuildDate>Sat, 26 Jan 2019 11:38:11 +0800</lastBuildDate>
+    <generator>Jekyll v3.7.4</generator>
     
       <item>
         <title>【略读系列】fescar 源码 ( 二 )</title>
@@ -316,7 +316,7 @@
 
 &lt;p&gt;这里我们知识走完的分支事务的流程，也就是 RM 的一些代码走读，关于分支事务注册，以及分支事务状态上报，我们后天继续。&lt;/p&gt;
 
-&lt;h1 id=&quot;后续补充&quot;&gt;后续补充&lt;/h1&gt;
+&lt;h3 id=&quot;后续补充&quot;&gt;后续补充&lt;/h3&gt;
 &lt;ol&gt;
   &lt;li&gt;xid的传递&lt;/li&gt;
   &lt;li&gt;全局事务写锁的原理&lt;/li&gt;
@@ -324,8 +324,8 @@
 &lt;/ol&gt;
 </description>
         <pubDate>Tue, 22 Jan 2019 18:43:13 +0800</pubDate>
-        <link>http://localhost:4000/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%BA%8C-)/</link>
-        <guid isPermaLink="true">http://localhost:4000/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%BA%8C-)/</guid>
+        <link>http://localhost:4000/2019/01/22/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%BA%8C-)/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/01/22/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%BA%8C-)/</guid>
         
         <category>略读系列</category>
         
@@ -530,8 +530,8 @@
 &lt;p&gt;这样我们就把主线给走完了，具体 RM 和 TC 如何通信，RM 分支事务注册，提交这些细节，请见后续章节。&lt;/p&gt;
 </description>
         <pubDate>Mon, 21 Jan 2019 18:45:04 +0800</pubDate>
-        <link>http://localhost:4000/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%B8%80-)/</link>
-        <guid isPermaLink="true">http://localhost:4000/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%B8%80-)/</guid>
+        <link>http://localhost:4000/2019/01/21/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%B8%80-)/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/01/21/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%B8%80-)/</guid>
         
         <category>略读系列</category>
         
@@ -564,8 +564,8 @@ E：最终一致。&lt;strong&gt;同一数据的不同副本&lt;/strong&gt;的�
 &lt;/ol&gt;
 </description>
         <pubDate>Wed, 09 Jan 2019 19:05:04 +0800</pubDate>
-        <link>http://localhost:4000/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-CAP-%E7%90%86%E8%AE%BA/</link>
-        <guid isPermaLink="true">http://localhost:4000/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-CAP-%E7%90%86%E8%AE%BA/</guid>
+        <link>http://localhost:4000/2019/01/09/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-CAP-%E7%90%86%E8%AE%BA/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/01/09/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-CAP-%E7%90%86%E8%AE%BA/</guid>
         
         <category>略读系列</category>
         
@@ -598,8 +598,8 @@ E：最终一致。&lt;strong&gt;同一数据的不同副本&lt;/strong&gt;的�
 &lt;/ol&gt;
 </description>
         <pubDate>Mon, 07 Jan 2019 19:55:10 +0800</pubDate>
-        <link>http://localhost:4000/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-%E4%BA%8B%E5%8A%A1%E7%9A%84%E6%A6%82%E5%BF%B5/</link>
-        <guid isPermaLink="true">http://localhost:4000/2019/01/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-%E4%BA%8B%E5%8A%A1%E7%9A%84%E6%A6%82%E5%BF%B5/</guid>
+        <link>http://localhost:4000/2019/01/07/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-%E4%BA%8B%E5%8A%A1%E7%9A%84%E6%A6%82%E5%BF%B5/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/01/07/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-%E4%BA%8B%E5%8A%A1%E7%9A%84%E6%A6%82%E5%BF%B5/</guid>
         
         <category>略读系列</category>
         

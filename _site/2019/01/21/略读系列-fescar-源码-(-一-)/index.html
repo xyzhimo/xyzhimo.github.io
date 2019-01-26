@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-cmn-Hans" prefix="og: http://ogp.me/ns#" class="han-init">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <title>【略读系列】fescar 源码 ( 一 ) &mdash; 知末的博客</title>
+    <link rel="stylesheet" href="http://localhost:4000/assets/vendor/primer-css/css/primer.css">
+    <link rel="stylesheet" href="http://localhost:4000/assets/vendor/primer-markdown/dist/user-content.min.css">
+    <link rel="stylesheet" href="http://localhost:4000/assets/vendor/octicons/octicons/octicons.css">
+    <link rel="stylesheet" href="http://localhost:4000/assets/css/components/collection.css">
+    <link rel="stylesheet" href="http://localhost:4000/assets/css/components/repo-card.css">
+    <link rel="stylesheet" href="http://localhost:4000/assets/css/sections/repo-list.css">
+    <link rel="stylesheet" href="http://localhost:4000/assets/css/sections/mini-repo-list.css">
+    <link rel="stylesheet" href="http://localhost:4000/assets/css/components/boxed-group.css">
+    <link rel="stylesheet" href="http://localhost:4000/assets/css/globals/common.css">
+    <link rel="stylesheet" href="http://localhost:4000/assets/vendor/share.js/dist/css/share.min.css">
+    <link rel="stylesheet" href="http://localhost:4000/assets/css/globals/responsive.css">
+    <link rel="stylesheet" href="http://localhost:4000/assets/css/posts/index.css">
+    <!-- Latest compiled and minified CSS -->
+    
+
+    
+    <link rel="canonical" href="http://localhost:4000/2019/01/21/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%B8%80-)/">
+    <link rel="alternate" type="application/atom+xml" title="知末的博客" href="http://localhost:4000/feed.xml">
+    <link rel="shortcut icon" href="http://localhost:4000/favicon.ico">
+    
+    <meta property="og:title" content="【略读系列】fescar 源码 ( 一 )">
+      
+    <meta name="keywords" content="知末, zhimo, xyzhimo">
+    <meta name="og:keywords" content="知末, zhimo, xyzhimo">
+      
+    <meta name="description" content="阅读内容">
+    <meta name="og:description" content="阅读内容">
+      
+    
+    
+        
+    
+    <meta property="og:url" content="http://localhost:4000/2019/01/21/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%B8%80-)/">
+    <meta property="og:site_name" content="知末的博客">
+    <meta property="og:type" content="article">
+    <meta property="og:locale" content="zh_CN" />
+    
+    <meta property="article:published_time" content="2019-01-21">
+    
+    <script src="http://localhost:4000/assets/vendor/jquery/dist/jquery.min.js"></script>
+    <script src="http://localhost:4000/assets/js/jquery-ui.js"></script>
+    <script src="http://localhost:4000/assets/js/main.js"></script>
+</head>
+<body class="" data-mz="">
+    <header class="site-header">
+        <div class="container">
+            <h1><a href="http://localhost:4000/" title="知末的博客"><span class="octicon octicon-mark-github"></span> 知末的博客</a></h1>
+            <button class="collapsed mobile-visible" type="button" onclick="toggleMenu();">
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <nav class="site-header-nav" role="navigation">
+                
+                <a href="http://localhost:4000/" class=" site-header-nav-item" target="" title="首页">首页</a>
+                
+                <a href="http://localhost:4000/categories/" class=" site-header-nav-item" target="" title="分类">分类</a>
+                
+                <a href="http://localhost:4000/wiki/" class=" site-header-nav-item" target="" title="维基">维基</a>
+                
+                <a href="http://localhost:4000/links/" class=" site-header-nav-item" target="" title="链接">链接</a>
+                
+            </nav>
+        </div>
+    </header>
+    <!-- / header -->
+
+    <section class="collection-head small geopattern" data-pattern-id="【略读系列】fescar 源码">
+<div class="container">
+  <div class="columns">
+    <div class="column three-fourths">
+      <div class="collection-title">
+        <h1 class="collection-header">【略读系列】fescar 源码 ( 一 )</h1>
+        <div class="collection-info">
+          
+          <span class="meta-info">
+            <span class="octicon octicon-calendar"></span> 2019/01/21
+          </span>
+          
+          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+<!-- / .banner -->
+<section class="container content">
+<div class="columns">
+  <div class="column three-fourths" >
+    <article class="article-content markdown-body">
+    <h3 id="阅读内容">阅读内容</h3>
+
+<ul>
+  <li><a href="https://github.com/alibaba/fescar/wiki/%E6%A6%82%E8%A7%88">fescar概览</a></li>
+</ul>
+
+<h3 id="代码走读">代码走读</h3>
+<h4 id="1首先要明确-tctm-和-rm-他们对应的职责和所在的位置">1.首先要明确 TC、TM 和 RM 他们对应的职责和所在的位置。</h4>
+<ul>
+  <li>TC: 事务协调器。负责协调管理全局事务，维护着全局事务的状态信息。</li>
+  <li>TM: 事务管理器。全局事务的边界，负责全局事务的发起和全局事务的提交/回滚。</li>
+  <li>RM: 资源管理器。分支事务的注册，状态汇报。和 TC 通信，被驱动进行分支事务提交/回滚。</li>
+</ul>
+
+<h4 id="2代码梳理梳理">2.代码梳理梳理</h4>
+<p>今天我们先走读一下 fescar 事务提交的源码。我们先从 <code class="highlighter-rouge">GlobalTransactionScanner</code> 这个类开始，因为这个类在 Spring 加载时会触发其 <code class="highlighter-rouge">wrapIfNecessary</code> 方法。</p>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">protected</span> <span class="n">Object</span> <span class="nf">wrapIfNecessary</span><span class="o">(</span><span class="n">Object</span> <span class="n">bean</span><span class="o">,</span> <span class="n">String</span> <span class="n">beanName</span><span class="o">,</span> <span class="n">Object</span> <span class="n">cacheKey</span><span class="o">)</span> <span class="o">{</span>
+    <span class="o">...</span>
+    <span class="n">GlobalTransactional</span> <span class="n">anno</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="na">getAnnotation</span><span class="o">(</span><span class="n">GlobalTransactional</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">anno</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">methodDescList</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">makeMethodDesc</span><span class="o">(</span><span class="n">anno</span><span class="o">,</span> <span class="n">method</span><span class="o">));</span>
+    <span class="o">}</span>
+    <span class="o">...</span>
+    <span class="n">interceptor</span> <span class="o">=</span> <span class="k">new</span> <span class="n">GlobalTransactionalInterceptor</span><span class="o">(</span><span class="n">failureHandlerHook</span><span class="o">);</span>
+    <span class="c1">// 将interceptor放入bean的AdvisedSupport中</span>
+    <span class="k">if</span> <span class="o">(!</span><span class="n">AopUtils</span><span class="o">.</span><span class="na">isAopProxy</span><span class="o">(</span><span class="n">bean</span><span class="o">))</span> <span class="o">{</span>
+    <span class="n">bean</span> <span class="o">=</span> <span class="kd">super</span><span class="o">.</span><span class="na">wrapIfNecessary</span><span class="o">(</span><span class="n">bean</span><span class="o">,</span> <span class="n">beanName</span><span class="o">,</span> <span class="n">cacheKey</span><span class="o">);</span>
+    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+    <span class="n">AdvisedSupport</span> <span class="n">advised</span> <span class="o">=</span> <span class="n">getAdvisedSupport</span><span class="o">(</span><span class="n">bean</span><span class="o">);</span>
+    <span class="n">Advisor</span><span class="o">[]</span> <span class="n">advisor</span> <span class="o">=</span> <span class="n">buildAdvisors</span><span class="o">(</span><span class="n">beanName</span><span class="o">,</span> <span class="n">getAdvicesAndAdvisorsForBean</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="kc">null</span><span class="o">));</span>
+    <span class="k">for</span> <span class="o">(</span><span class="n">Advisor</span> <span class="n">avr</span> <span class="o">:</span> <span class="n">advisor</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">advised</span><span class="o">.</span><span class="na">addAdvisor</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">avr</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="n">bean</span><span class="o">;</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>我们可以看到这里初始化了一个 <code class="highlighter-rouge">GlobalTransactionalInterceptor</code> 全局事务拦截器，并将其放入 bean 中。<code class="highlighter-rouge">GlobalTransactionalInterceptor</code> 接手 Spring 的 AOP 代理后。<code class="highlighter-rouge">invoke</code> 方法如下：</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="kd">public</span> <span class="n">Object</span> <span class="nf">invoke</span><span class="o">(</span><span class="kd">final</span> <span class="n">MethodInvocation</span> <span class="n">methodInvocation</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Throwable</span> <span class="o">{</span>
+        <span class="kd">final</span> <span class="n">GlobalTransactional</span> <span class="n">anno</span> <span class="o">=</span> <span class="n">getAnnotation</span><span class="o">(</span><span class="n">methodInvocation</span><span class="o">.</span><span class="na">getMethod</span><span class="o">());</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">anno</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="n">transactionalTemplate</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="k">new</span> <span class="n">TransactionalExecutor</span><span class="o">()</span> <span class="o">{</span>
+                    <span class="nd">@Override</span>
+                    <span class="kd">public</span> <span class="n">Object</span> <span class="nf">execute</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">Throwable</span> <span class="o">{</span>
+                        <span class="k">return</span> <span class="n">methodInvocation</span><span class="o">.</span><span class="na">proceed</span><span class="o">();</span>
+                    <span class="o">}</span>
+
+                    <span class="nd">@Override</span>
+                    <span class="kd">public</span> <span class="kt">int</span> <span class="nf">timeout</span><span class="o">()</span> <span class="o">{</span>
+                        <span class="k">return</span> <span class="n">anno</span><span class="o">.</span><span class="na">timeoutMills</span><span class="o">();</span>
+                    <span class="o">}</span>
+
+                    <span class="nd">@Override</span>
+                    <span class="kd">public</span> <span class="n">String</span> <span class="nf">name</span><span class="o">()</span> <span class="o">{</span>
+                        <span class="n">String</span> <span class="n">name</span> <span class="o">=</span> <span class="n">anno</span><span class="o">.</span><span class="na">name</span><span class="o">();</span>
+                        <span class="k">if</span> <span class="o">(!</span><span class="n">StringUtils</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">(</span><span class="n">name</span><span class="o">))</span> <span class="o">{</span>
+                            <span class="k">return</span> <span class="n">name</span><span class="o">;</span>
+                        <span class="o">}</span>
+                        <span class="k">return</span> <span class="nf">formatMethod</span><span class="o">(</span><span class="n">methodInvocation</span><span class="o">.</span><span class="na">getMethod</span><span class="o">());</span>
+                    <span class="o">}</span>
+                <span class="o">});</span>
+            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">Code</span> <span class="n">code</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">getCode</span><span class="o">();</span>
+                <span class="k">switch</span> <span class="o">(</span><span class="n">code</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="k">case</span> <span class="nl">RollbackDone:</span>
+                        <span class="k">throw</span> <span class="n">e</span><span class="o">.</span><span class="na">getOriginalException</span><span class="o">();</span>
+                    <span class="k">case</span> <span class="nl">BeginFailure:</span>
+                        <span class="n">failureHandler</span><span class="o">.</span><span class="na">onBeginFailure</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">getTransaction</span><span class="o">(),</span> <span class="n">e</span><span class="o">.</span><span class="na">getCause</span><span class="o">());</span>
+                        <span class="k">throw</span> <span class="n">e</span><span class="o">.</span><span class="na">getCause</span><span class="o">();</span>
+                    <span class="k">case</span> <span class="nl">CommitFailure:</span>
+                        <span class="n">failureHandler</span><span class="o">.</span><span class="na">onCommitFailure</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">getTransaction</span><span class="o">(),</span> <span class="n">e</span><span class="o">.</span><span class="na">getCause</span><span class="o">());</span>
+                        <span class="k">throw</span> <span class="n">e</span><span class="o">.</span><span class="na">getCause</span><span class="o">();</span>
+                    <span class="k">case</span> <span class="nl">RollbackFailure:</span>
+                        <span class="n">failureHandler</span><span class="o">.</span><span class="na">onRollbackFailure</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">getTransaction</span><span class="o">(),</span> <span class="n">e</span><span class="o">.</span><span class="na">getCause</span><span class="o">());</span>
+                        <span class="k">throw</span> <span class="n">e</span><span class="o">.</span><span class="na">getCause</span><span class="o">();</span>
+                    <span class="k">default</span><span class="o">:</span>
+                        <span class="k">throw</span> <span class="k">new</span> <span class="nf">ShouldNeverHappenException</span><span class="o">(</span><span class="s">"Unknown TransactionalExecutor.Code: "</span> <span class="o">+</span> <span class="n">code</span><span class="o">);</span>
+
+                <span class="o">}</span>
+            <span class="o">}</span>
+
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">methodInvocation</span><span class="o">.</span><span class="na">proceed</span><span class="o">();</span>
+    <span class="o">}</span>
+</code></pre></div></div>
+
+<p>我们重点关注 <code class="highlighter-rouge">TransactionalTemplate</code> 的 <code class="highlighter-rouge">execute</code> 方法，方法如下：</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="n">Object</span> <span class="nf">execute</span><span class="o">(</span><span class="n">TransactionalExecutor</span> <span class="n">business</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span> <span class="o">{</span>
+
+        <span class="c1">// 1. get or create a transaction</span>
+        <span class="n">GlobalTransaction</span> <span class="n">tx</span> <span class="o">=</span> <span class="n">GlobalTransactionContext</span><span class="o">.</span><span class="na">getCurrentOrCreate</span><span class="o">();</span>
+
+        <span class="c1">// 2. begin transaction</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">tx</span><span class="o">.</span><span class="na">begin</span><span class="o">(</span><span class="n">business</span><span class="o">.</span><span class="na">timeout</span><span class="o">(),</span> <span class="n">business</span><span class="o">.</span><span class="na">name</span><span class="o">());</span>
+
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">TransactionException</span> <span class="n">txe</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span><span class="o">(</span><span class="n">tx</span><span class="o">,</span> <span class="n">txe</span><span class="o">,</span>
+                <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">Code</span><span class="o">.</span><span class="na">BeginFailure</span><span class="o">);</span>
+
+        <span class="o">}</span>
+
+        <span class="n">Object</span> <span class="n">rs</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="k">try</span> <span class="o">{</span>
+
+            <span class="c1">// Do Your Business</span>
+            <span class="n">rs</span> <span class="o">=</span> <span class="n">business</span><span class="o">.</span><span class="na">execute</span><span class="o">();</span>
+
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+
+            <span class="c1">// 3. any business exception, rollback.</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="n">tx</span><span class="o">.</span><span class="na">rollback</span><span class="o">();</span>
+
+                <span class="c1">// 3.1 Successfully rolled back</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span><span class="o">(</span><span class="n">tx</span><span class="o">,</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">Code</span><span class="o">.</span><span class="na">RollbackDone</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+
+            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">TransactionException</span> <span class="n">txe</span><span class="o">)</span> <span class="o">{</span>
+                <span class="c1">// 3.2 Failed to rollback</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span><span class="o">(</span><span class="n">tx</span><span class="o">,</span> <span class="n">txe</span><span class="o">,</span>
+                    <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">Code</span><span class="o">.</span><span class="na">RollbackFailure</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+
+            <span class="o">}</span>
+
+        <span class="o">}</span>
+
+        <span class="c1">// 4. everything is fine, commit.</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">tx</span><span class="o">.</span><span class="na">commit</span><span class="o">();</span>
+
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">TransactionException</span> <span class="n">txe</span><span class="o">)</span> <span class="o">{</span>
+            <span class="c1">// 4.1 Failed to commit</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span><span class="o">(</span><span class="n">tx</span><span class="o">,</span> <span class="n">txe</span><span class="o">,</span>
+                <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">Code</span><span class="o">.</span><span class="na">CommitFailure</span><span class="o">);</span>
+
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">rs</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></div></div>
+
+<p><code class="highlighter-rouge">execute</code> 方法做了很多事情，我们一步一步分析，首先第一步是 <code class="highlighter-rouge">getCurrentOrCreate</code> 得到当前的全局事务或者创建全局事务。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">static</span> <span class="n">GlobalTransaction</span> <span class="nf">getCurrentOrCreate</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">GlobalTransaction</span> <span class="n">tx</span> <span class="o">=</span> <span class="n">getCurrent</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">tx</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="nf">createNew</span><span class="o">();</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">tx</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></div></div>
+
+<p>如果是创建的话，此时 <code class="highlighter-rouge">GlobalTransaction</code> 并没有填充 xid，我们接着看 <code class="highlighter-rouge">GlobalTransaction</code> 的 <code class="highlighter-rouge">begin</code> 方法。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">begin</span><span class="o">(</span><span class="kt">int</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">String</span> <span class="n">name</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">xid</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">role</span> <span class="o">==</span> <span class="n">GlobalTransactionRole</span><span class="o">.</span><span class="na">Launcher</span><span class="o">)</span> <span class="o">{</span>
+            <span class="c1">// TM 通信 TC 开启事务，xid由TC分配。</span>
+            <span class="n">xid</span> <span class="o">=</span> <span class="n">transactionManager</span><span class="o">.</span><span class="na">begin</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="n">name</span><span class="o">,</span> <span class="n">timeout</span><span class="o">);</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="n">GlobalStatus</span><span class="o">.</span><span class="na">Begin</span><span class="o">;</span>
+            <span class="c1">// 绑定xid，用于透传xid。TODO: 后续研究</span>
+            <span class="n">RootContext</span><span class="o">.</span><span class="na">bind</span><span class="o">(</span><span class="n">xid</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">xid</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="nf">ShouldNeverHappenException</span><span class="o">(</span><span class="n">role</span> <span class="o">+</span> <span class="s">" is NOT in a global transaction context."</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="n">LOGGER</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="n">role</span> <span class="o">+</span> <span class="s">" is already in global transaction "</span> <span class="o">+</span> <span class="n">xid</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></div></div>
+
+<p>好，看完了事务开启，我们现在看 business.execute() 这个方法，调用全局事务的业务逻辑。这里会触发 RM 的逻辑，我们今天先不做解释。接着往下看，我们今天最主要看提交流程，我们看到 tx.commit() 方法。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">commit</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+        <span class="n">check</span><span class="o">();</span>
+        <span class="c1">// 解绑xid</span>
+        <span class="n">RootContext</span><span class="o">.</span><span class="na">unbind</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">role</span> <span class="o">==</span> <span class="n">GlobalTransactionRole</span><span class="o">.</span><span class="na">Participant</span><span class="o">)</span> <span class="o">{</span>
+            <span class="c1">// Participant has no responsibility of committing</span>
+            <span class="c1">// 参与者是不需要提交的</span>
+            <span class="k">return</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="c1">// TM 向 TC 通信，全局事务提交。</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">transactionManager</span><span class="o">.</span><span class="na">commit</span><span class="o">(</span><span class="n">xid</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></div></div>
+
+<p>第一步是检查校验，第二步是解绑xid，第三步判断是不是参与者，如果是参与者，不提交事务。</p>
+
+<p>这样我们就把主线给走完了，具体 RM 和 TC 如何通信，RM 分支事务注册，提交这些细节，请见后续章节。</p>
+
+    </article>
+    <div class="share">
+      <div class="share-component"></div>
+    </div>
+    <div class="comment">
+      
+
+  
+
+  
+        <div id="gitalk-container"></div>
+        <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+        <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+        <script>
+        var gitalk = new Gitalk({
+            id: '/2019/01/21/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-f',
+            clientID: '3e6a5dbc89d96d203758',
+            clientSecret: 'a04051de7608c9cebb89add9d1496db32e09e798',
+            repo: 'blog-comments',
+            owner: 'xyzhimo',
+            admin: ['xyzhimo'],
+            labels: ['gitment'],
+            perPage: 50,
+        })
+        gitalk.render('gitalk-container')
+        </script>
+  
+
+
+    </div>
+  </div>
+  <div class="column one-fourth">
+    
+<h3>Search</h3>
+<div id="site_search">
+    <input type="text" id="search_box" placeholder="Search">
+</div>
+
+<ul id="search_results"></ul>
+
+<link rel="stylesheet" type="text/css" href="http://localhost:4000/assets/css/modules/sidebar-search.css">
+<script src="http://localhost:4000/assets/js/simple-jekyll-search.min.js"></script>
+<script src="http://localhost:4000/assets/js/search.js"></script>
+
+<script type="text/javascript">
+SimpleJekyllSearch({
+    searchInput: document.getElementById('search_box'),
+    resultsContainer: document.getElementById('search_results'),
+    json: 'http://localhost:4000/assets/search_data.json',
+    searchResultTemplate: '<li><a href="{url}" title="{desc}">{title}</a></li>',
+    noResultsText: 'No results found',
+    limit: 10,
+    fuzzy: false,
+    exclude: ['Welcome']
+})
+</script>
+
+    
+
+    
+<h3 class="post-directory-title mobile-hidden">Table of Contents</h3>
+<div id="post-directory-module" class="mobile-hidden">
+  <section class="post-directory">
+  <!-- Links that trigger the jumping -->
+  <!-- Added by javascript below -->
+  <dl></dl>
+  </section>
+</div>
+
+<script src="http://localhost:4000/assets/js/jquery.toc.js"></script>
+
+  </div>
+</div>
+</section>
+<!-- /section.content -->
+
+    <footer class="container">
+        <div class="site-footer" role="contentinfo">
+            <div class="copyright left mobile-block">
+                    © 2015
+                    <span title="zhimo xiao">zhimo xiao</span>
+                    <a href="javascript:window.scrollTo(0,0)" class="right mobile-visible">TOP</a>
+            </div>
+
+            <ul class="site-footer-links right mobile-hidden">
+                <li>
+                    <a href="javascript:window.scrollTo(0,0)" >TOP</a>
+                </li>
+            </ul>
+            <a href="http://github.com/xyzhimo/xyzhimo.github.io" target="_blank" aria-label="view source code">
+                <span class="mega-octicon octicon-mark-github" title="GitHub"></span>
+            </a>
+            <ul class="site-footer-links mobile-hidden">
+                
+                <li>
+                    <a href="http://localhost:4000/" title="首页" target="">首页</a>
+                </li>
+                
+                <li>
+                    <a href="http://localhost:4000/categories/" title="分类" target="">分类</a>
+                </li>
+                
+                <li>
+                    <a href="http://localhost:4000/wiki/" title="维基" target="">维基</a>
+                </li>
+                
+                <li>
+                    <a href="http://localhost:4000/links/" title="链接" target="">链接</a>
+                </li>
+                
+                <li><a href="http://localhost:4000/feed.xml"><span class="octicon octicon-rss" style="color:orange;"></span></a></li>
+            </ul>
+
+        </div>
+    </footer>
+    <div class="tools-wrapper">
+      <a class="gotop" href="#" title="回到顶部"><span class="octicon octicon-arrow-up"></span></a>
+    </div>
+    <!-- / footer -->
+    <script src="http://localhost:4000/assets/vendor/share.js/dist/js/share.min.js"></script>
+    <script src="http://localhost:4000/assets/js/geopattern.js"></script>
+    <script src="http://localhost:4000/assets/js/prism.js"></script>
+    <link rel="stylesheet" href="http://localhost:4000/assets/css/globals/prism.css">
+    <script>
+      jQuery(document).ready(function($) {
+        // geopattern
+        $('.geopattern').each(function(){
+          $(this).geopattern($(this).data('pattern-id'));
+        });
+       // hljs.initHighlightingOnLoad();
+      });
+    </script>
+
+    
+
+    
+
+    
+
+    
+
+    
+    <div style="display:none">
+      <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-80669434-1', 'auto');
+        ga('send', 'pageview');
+
+      </script>
+    </div>
+    
+</body>
+</html>
