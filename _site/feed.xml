@@ -5,8 +5,8 @@
     <description>欲将心事付瑶琴。知音少，弦断有谁听。</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sat, 26 Jan 2019 11:46:35 +0800</pubDate>
-    <lastBuildDate>Sat, 26 Jan 2019 11:46:35 +0800</lastBuildDate>
+    <pubDate>Sat, 26 Jan 2019 11:51:53 +0800</pubDate>
+    <lastBuildDate>Sat, 26 Jan 2019 11:51:53 +0800</lastBuildDate>
     <generator>Jekyll v3.7.4</generator>
     
       <item>
@@ -327,10 +327,8 @@
         <link>http://localhost:4000/2019/01/22/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%BA%8C-)/</link>
         <guid isPermaLink="true">http://localhost:4000/2019/01/22/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%BA%8C-)/</guid>
         
+        
         <category>略读系列</category>
-        
-        <category>源码走读</category>
-        
         
       </item>
     
@@ -533,10 +531,8 @@
         <link>http://localhost:4000/2019/01/21/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%B8%80-)/</link>
         <guid isPermaLink="true">http://localhost:4000/2019/01/21/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%B8%80-)/</guid>
         
+        
         <category>略读系列</category>
-        
-        <category>源码走读</category>
-        
         
       </item>
     
@@ -567,10 +563,8 @@ E：最终一致。&lt;strong&gt;同一数据的不同副本&lt;/strong&gt;的�
         <link>http://localhost:4000/2019/01/09/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-CAP-%E7%90%86%E8%AE%BA/</link>
         <guid isPermaLink="true">http://localhost:4000/2019/01/09/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-CAP-%E7%90%86%E8%AE%BA/</guid>
         
+        
         <category>略读系列</category>
-        
-        <category>分布式事务</category>
-        
         
       </item>
     
@@ -601,10 +595,8 @@ E：最终一致。&lt;strong&gt;同一数据的不同副本&lt;/strong&gt;的�
         <link>http://localhost:4000/2019/01/07/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-%E4%BA%8B%E5%8A%A1%E7%9A%84%E6%A6%82%E5%BF%B5/</link>
         <guid isPermaLink="true">http://localhost:4000/2019/01/07/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-%E4%BA%8B%E5%8A%A1%E7%9A%84%E6%A6%82%E5%BF%B5/</guid>
         
+        
         <category>略读系列</category>
-        
-        <category>分布式事务</category>
-        
         
       </item>
     
