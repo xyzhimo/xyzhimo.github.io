@@ -339,12 +339,15 @@
         <span class="n">RootContext</span><span class="o">.</span><span class="na">unbind</span><span class="o">();</span>
         <span class="k">if</span> <span class="o">(</span><span class="n">role</span> <span class="o">==</span> <span class="n">GlobalTransactionRole</span><span class="o">.</span><span class="na">Participant</span><span class="o">)</span> <span class="o">{</span>
             <span class="c1">// Participant has no responsibility of committing</span>
+            <span class="c1">// 参与者是不需要提交的</span>
             <span class="k">return</span><span class="o">;</span>
         <span class="o">}</span>
         <span class="c1">// TM 向 TC 通信，全局事务提交。</span>
         <span class="n">status</span> <span class="o">=</span> <span class="n">transactionManager</span><span class="o">.</span><span class="na">commit</span><span class="o">(</span><span class="n">xid</span><span class="o">);</span>
     <span class="o">}</span>
 </code></pre></div></div>
+
+<p>第一步是检查校验，第二步是解绑xid，第三步判断是不是参与者，如果是参与者，不提交事务。</p>
 
 <p>这样我们就把主线给走完了，具体 RM 和 TC 如何通信，RM 分支事务注册，提交这些细节，请见后续章节。</p>
 

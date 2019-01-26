@@ -5,8 +5,8 @@
     <description>欲将心事付瑶琴。知音少，弦断有谁听。</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Wed, 23 Jan 2019 11:15:44 +0800</pubDate>
-    <lastBuildDate>Wed, 23 Jan 2019 11:15:44 +0800</lastBuildDate>
+    <pubDate>Sat, 26 Jan 2019 09:50:43 +0800</pubDate>
+    <lastBuildDate>Sat, 26 Jan 2019 09:50:43 +0800</lastBuildDate>
     <generator>Jekyll v3.8.5</generator>
     
       <item>
@@ -517,12 +517,15 @@
         &lt;span class=&quot;n&quot;&gt;RootContext&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;unbind&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;();&lt;/span&gt;
         &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;role&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GlobalTransactionRole&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;Participant&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
             &lt;span class=&quot;c1&quot;&gt;// Participant has no responsibility of committing&lt;/span&gt;
+            &lt;span class=&quot;c1&quot;&gt;// 参与者是不需要提交的&lt;/span&gt;
             &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;;&lt;/span&gt;
         &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
         &lt;span class=&quot;c1&quot;&gt;// TM 向 TC 通信，全局事务提交。&lt;/span&gt;
         &lt;span class=&quot;n&quot;&gt;status&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;transactionManager&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;commit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;xid&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;);&lt;/span&gt;
     &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;第一步是检查校验，第二步是解绑xid，第三步判断是不是参与者，如果是参与者，不提交事务。&lt;/p&gt;
 
 &lt;p&gt;这样我们就把主线给走完了，具体 RM 和 TC 如何通信，RM 分支事务注册，提交这些细节，请见后续章节。&lt;/p&gt;
 </description>
