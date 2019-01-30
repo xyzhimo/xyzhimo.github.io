@@ -247,47 +247,47 @@
 <p><code class="highlighter-rouge">execute</code> 方法做了很多事情，我们一步一步分析，首先第一步是 <code class="highlighter-rouge">getCurrentOrCreate</code> 得到当前的全局事务或者创建全局事务。</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">static</span> <span class="n">GlobalTransaction</span> <span class="nf">getCurrentOrCreate</span><span class="o">()</span> <span class="o">{</span>
-        <span class="n">GlobalTransaction</span> <span class="n">tx</span> <span class="o">=</span> <span class="n">getCurrent</span><span class="o">();</span>
-        <span class="k">if</span> <span class="o">(</span><span class="n">tx</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
-            <span class="k">return</span> <span class="nf">createNew</span><span class="o">();</span>
-        <span class="o">}</span>
-        <span class="k">return</span> <span class="n">tx</span><span class="o">;</span>
+    <span class="n">GlobalTransaction</span> <span class="n">tx</span> <span class="o">=</span> <span class="n">getCurrent</span><span class="o">();</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">tx</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="nf">createNew</span><span class="o">();</span>
     <span class="o">}</span>
+    <span class="k">return</span> <span class="n">tx</span><span class="o">;</span>
+<span class="o">}</span>
 </code></pre></div></div>
 
 <p>如果是创建的话，此时 <code class="highlighter-rouge">GlobalTransaction</code> 并没有填充 xid，我们接着看 <code class="highlighter-rouge">GlobalTransaction</code> 的 <code class="highlighter-rouge">begin</code> 方法。</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@Override</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">begin</span><span class="o">(</span><span class="kt">int</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">String</span> <span class="n">name</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
-        <span class="k">if</span> <span class="o">(</span><span class="n">xid</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">role</span> <span class="o">==</span> <span class="n">GlobalTransactionRole</span><span class="o">.</span><span class="na">Launcher</span><span class="o">)</span> <span class="o">{</span>
-            <span class="c1">// TM 通信 TC 开启事务，xid由TC分配。</span>
-            <span class="n">xid</span> <span class="o">=</span> <span class="n">transactionManager</span><span class="o">.</span><span class="na">begin</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="n">name</span><span class="o">,</span> <span class="n">timeout</span><span class="o">);</span>
-            <span class="n">status</span> <span class="o">=</span> <span class="n">GlobalStatus</span><span class="o">.</span><span class="na">Begin</span><span class="o">;</span>
-            <span class="c1">// 绑定xid，用于透传xid。TODO: 后续研究</span>
-            <span class="n">RootContext</span><span class="o">.</span><span class="na">bind</span><span class="o">(</span><span class="n">xid</span><span class="o">);</span>
-        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
-            <span class="k">if</span> <span class="o">(</span><span class="n">xid</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
-                <span class="k">throw</span> <span class="k">new</span> <span class="nf">ShouldNeverHappenException</span><span class="o">(</span><span class="n">role</span> <span class="o">+</span> <span class="s">" is NOT in a global transaction context."</span><span class="o">);</span>
-            <span class="o">}</span>
-            <span class="n">LOGGER</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="n">role</span> <span class="o">+</span> <span class="s">" is already in global transaction "</span> <span class="o">+</span> <span class="n">xid</span><span class="o">);</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">begin</span><span class="o">(</span><span class="kt">int</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">String</span> <span class="n">name</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">xid</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">role</span> <span class="o">==</span> <span class="n">GlobalTransactionRole</span><span class="o">.</span><span class="na">Launcher</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// TM 通信 TC 开启事务，xid由TC分配。</span>
+        <span class="n">xid</span> <span class="o">=</span> <span class="n">transactionManager</span><span class="o">.</span><span class="na">begin</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="n">name</span><span class="o">,</span> <span class="n">timeout</span><span class="o">);</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">GlobalStatus</span><span class="o">.</span><span class="na">Begin</span><span class="o">;</span>
+        <span class="c1">// 绑定xid，用于透传xid。TODO: 后续研究</span>
+        <span class="n">RootContext</span><span class="o">.</span><span class="na">bind</span><span class="o">(</span><span class="n">xid</span><span class="o">);</span>
+    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">xid</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ShouldNeverHappenException</span><span class="o">(</span><span class="n">role</span> <span class="o">+</span> <span class="s">" is NOT in a global transaction context."</span><span class="o">);</span>
         <span class="o">}</span>
+        <span class="n">LOGGER</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="n">role</span> <span class="o">+</span> <span class="s">" is already in global transaction "</span> <span class="o">+</span> <span class="n">xid</span><span class="o">);</span>
     <span class="o">}</span>
+<span class="o">}</span>
 </code></pre></div></div>
 
 <p>好，看完了事务开启，我们现在看 business.execute() 这个方法，调用全局事务的业务逻辑。这里会触发 RM 的逻辑，我们今天先不做解释。接着往下看，我们今天最主要看提交流程，我们看到 tx.commit() 方法。</p>
 
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">commit</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
-        <span class="n">check</span><span class="o">();</span>
-        <span class="c1">// 解绑xid</span>
-        <span class="n">RootContext</span><span class="o">.</span><span class="na">unbind</span><span class="o">();</span>
-        <span class="k">if</span> <span class="o">(</span><span class="n">role</span> <span class="o">==</span> <span class="n">GlobalTransactionRole</span><span class="o">.</span><span class="na">Participant</span><span class="o">)</span> <span class="o">{</span>
-            <span class="c1">// Participant has no responsibility of committing</span>
-            <span class="c1">// 参与者是不需要提交的</span>
-            <span class="k">return</span><span class="o">;</span>
-        <span class="o">}</span>
-        <span class="c1">// TM 向 TC 通信，全局事务提交。</span>
-        <span class="n">status</span> <span class="o">=</span> <span class="n">transactionManager</span><span class="o">.</span><span class="na">commit</span><span class="o">(</span><span class="n">xid</span><span class="o">);</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kt">void</span> <span class="nf">commit</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+    <span class="n">check</span><span class="o">();</span>
+    <span class="c1">// 解绑xid</span>
+    <span class="n">RootContext</span><span class="o">.</span><span class="na">unbind</span><span class="o">();</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">role</span> <span class="o">==</span> <span class="n">GlobalTransactionRole</span><span class="o">.</span><span class="na">Participant</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// Participant has no responsibility of committing</span>
+        <span class="c1">// 参与者是不需要提交的</span>
+        <span class="k">return</span><span class="o">;</span>
     <span class="o">}</span>
+    <span class="c1">// TM 向 TC 通信，全局事务提交。</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">transactionManager</span><span class="o">.</span><span class="na">commit</span><span class="o">(</span><span class="n">xid</span><span class="o">);</span>
+<span class="o">}</span>
 </code></pre></div></div>
 
 <p>第一步是检查校验，第二步是解绑xid，第三步判断是不是参与者，如果是参与者，不提交事务。</p>

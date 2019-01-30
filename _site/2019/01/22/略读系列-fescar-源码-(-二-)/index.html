@@ -109,7 +109,7 @@
 
 <h3 id="代码走读">代码走读</h3>
 
-<p>上一章总结我们把主线给走完了，具体 RM 和 TC 如何通信，RM 分支事务注册，提交这些细节，我们还没走读。现在我们就来走读一下这些代码。</p>
+<p>上一章总结我们把主线给走完了，具体 RM 和 TC 如何通信，RM 分支事务注册，提交这些细节，我们还没走读。现在我们就来走读一下 TM, RM 这些代码。</p>
 
 <p>前一篇总结，我们提了一下 <code class="highlighter-rouge">TransactionalTemplate</code> 的 <code class="highlighter-rouge">execute</code> 方法，在 <code class="highlighter-rouge">execute</code> 里面我们看到了这段执行业务逻辑的代码</p>
 
@@ -121,7 +121,7 @@
 <span class="o">}</span>
 </code></pre></div></div>
 
-<p>这里会触发 RM 和 TC 的通信。我们可以看到在配置文件中有数据源代理的配置。</p>
+<p>这里会触发 RM 的代码逻辑。我们可以看到在配置文件中有数据源代理的配置。</p>
 
 <div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;bean</span> <span class="na">name=</span><span class="s">"accountDataSource"</span> <span class="na">class=</span><span class="s">"com.alibaba.druid.pool.DruidDataSource"</span>
       <span class="na">init-method=</span><span class="s">"init"</span> <span class="na">destroy-method=</span><span class="s">"close"</span><span class="nt">&gt;</span>
@@ -348,6 +348,7 @@
     <span class="n">LockRetryController</span> <span class="n">lockRetryController</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LockRetryController</span><span class="o">();</span>
     <span class="k">try</span> <span class="o">{</span>
         <span class="n">connectionProxy</span><span class="o">.</span><span class="na">setAutoCommit</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+        <span class="c1">// 如果某个线程抢占锁失败的话，睡眠一会，重新唤起。直到重试最大次数后，如果还失败，就抛出错误</span>
         <span class="k">while</span> <span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="o">{</span>
             <span class="k">try</span> <span class="o">{</span>
                 <span class="n">result</span> <span class="o">=</span> <span class="n">executeAutoCommitFalse</span><span class="o">(</span><span class="n">args</span><span class="o">);</span>
@@ -357,10 +358,12 @@
                 <span class="n">lockRetryController</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="n">lockConflict</span><span class="o">);</span>
             <span class="o">}</span>
         <span class="o">}</span>
-
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// when exception occur in finally,this exception will lost, so just print it here</span>
+        <span class="n">LOGGER</span><span class="o">.</span><span class="na">error</span><span class="o">(</span><span class="s">"exception occur"</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
+        <span class="k">throw</span> <span class="n">e</span><span class="o">;</span>
     <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
         <span class="n">connectionProxy</span><span class="o">.</span><span class="na">setAutoCommit</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
-
     <span class="o">}</span>
     <span class="k">return</span> <span class="n">result</span><span class="o">;</span>
 <span class="o">}</span>
@@ -404,13 +407,14 @@
 <span class="o">}</span>
 </code></pre></div></div>
 
-<p>这里我们知识走完的分支事务的流程，也就是 RM 的一些代码走读，关于分支事务注册，以及分支事务状态上报，我们后天继续。</p>
+<p>这里我们知识走完的分支事务的流程，也就是 RM 的一些代码走读，关于分支事务注册，以及分支事务状态上报，我们下章继续。</p>
 
 <h3 id="后续补充">后续补充</h3>
 <ol>
-  <li>xid的传递</li>
+  <li>xid 的传递</li>
+  <li>undoLog 的实现</li>
   <li>全局事务写锁的原理</li>
-  <li>AutoCommit 中 false 和 true 的影响</li>
+  <li>隔离性</li>
 </ol>
 
     </article>
