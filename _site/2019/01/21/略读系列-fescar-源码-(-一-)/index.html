@@ -140,108 +140,105 @@
 
 <p>我们可以看到这里初始化了一个 <code class="highlighter-rouge">GlobalTransactionalInterceptor</code> 全局事务拦截器，并将其放入 bean 中。<code class="highlighter-rouge">GlobalTransactionalInterceptor</code> 接手 Spring 的 AOP 代理后。<code class="highlighter-rouge">invoke</code> 方法如下：</p>
 
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="kd">public</span> <span class="n">Object</span> <span class="nf">invoke</span><span class="o">(</span><span class="kd">final</span> <span class="n">MethodInvocation</span> <span class="n">methodInvocation</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Throwable</span> <span class="o">{</span>
-        <span class="kd">final</span> <span class="n">GlobalTransactional</span> <span class="n">anno</span> <span class="o">=</span> <span class="n">getAnnotation</span><span class="o">(</span><span class="n">methodInvocation</span><span class="o">.</span><span class="na">getMethod</span><span class="o">());</span>
-        <span class="k">if</span> <span class="o">(</span><span class="n">anno</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
-            <span class="k">try</span> <span class="o">{</span>
-                <span class="k">return</span> <span class="n">transactionalTemplate</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="k">new</span> <span class="n">TransactionalExecutor</span><span class="o">()</span> <span class="o">{</span>
-                    <span class="nd">@Override</span>
-                    <span class="kd">public</span> <span class="n">Object</span> <span class="nf">execute</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">Throwable</span> <span class="o">{</span>
-                        <span class="k">return</span> <span class="n">methodInvocation</span><span class="o">.</span><span class="na">proceed</span><span class="o">();</span>
-                    <span class="o">}</span>
-
-                    <span class="nd">@Override</span>
-                    <span class="kd">public</span> <span class="kt">int</span> <span class="nf">timeout</span><span class="o">()</span> <span class="o">{</span>
-                        <span class="k">return</span> <span class="n">anno</span><span class="o">.</span><span class="na">timeoutMills</span><span class="o">();</span>
-                    <span class="o">}</span>
-
-                    <span class="nd">@Override</span>
-                    <span class="kd">public</span> <span class="n">String</span> <span class="nf">name</span><span class="o">()</span> <span class="o">{</span>
-                        <span class="n">String</span> <span class="n">name</span> <span class="o">=</span> <span class="n">anno</span><span class="o">.</span><span class="na">name</span><span class="o">();</span>
-                        <span class="k">if</span> <span class="o">(!</span><span class="n">StringUtils</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">(</span><span class="n">name</span><span class="o">))</span> <span class="o">{</span>
-                            <span class="k">return</span> <span class="n">name</span><span class="o">;</span>
-                        <span class="o">}</span>
-                        <span class="k">return</span> <span class="nf">formatMethod</span><span class="o">(</span><span class="n">methodInvocation</span><span class="o">.</span><span class="na">getMethod</span><span class="o">());</span>
-                    <span class="o">}</span>
-                <span class="o">});</span>
-            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
-                <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">Code</span> <span class="n">code</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">getCode</span><span class="o">();</span>
-                <span class="k">switch</span> <span class="o">(</span><span class="n">code</span><span class="o">)</span> <span class="o">{</span>
-                    <span class="k">case</span> <span class="nl">RollbackDone:</span>
-                        <span class="k">throw</span> <span class="n">e</span><span class="o">.</span><span class="na">getOriginalException</span><span class="o">();</span>
-                    <span class="k">case</span> <span class="nl">BeginFailure:</span>
-                        <span class="n">failureHandler</span><span class="o">.</span><span class="na">onBeginFailure</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">getTransaction</span><span class="o">(),</span> <span class="n">e</span><span class="o">.</span><span class="na">getCause</span><span class="o">());</span>
-                        <span class="k">throw</span> <span class="n">e</span><span class="o">.</span><span class="na">getCause</span><span class="o">();</span>
-                    <span class="k">case</span> <span class="nl">CommitFailure:</span>
-                        <span class="n">failureHandler</span><span class="o">.</span><span class="na">onCommitFailure</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">getTransaction</span><span class="o">(),</span> <span class="n">e</span><span class="o">.</span><span class="na">getCause</span><span class="o">());</span>
-                        <span class="k">throw</span> <span class="n">e</span><span class="o">.</span><span class="na">getCause</span><span class="o">();</span>
-                    <span class="k">case</span> <span class="nl">RollbackFailure:</span>
-                        <span class="n">failureHandler</span><span class="o">.</span><span class="na">onRollbackFailure</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">getTransaction</span><span class="o">(),</span> <span class="n">e</span><span class="o">.</span><span class="na">getCause</span><span class="o">());</span>
-                        <span class="k">throw</span> <span class="n">e</span><span class="o">.</span><span class="na">getCause</span><span class="o">();</span>
-                    <span class="k">default</span><span class="o">:</span>
-                        <span class="k">throw</span> <span class="k">new</span> <span class="nf">ShouldNeverHappenException</span><span class="o">(</span><span class="s">"Unknown TransactionalExecutor.Code: "</span> <span class="o">+</span> <span class="n">code</span><span class="o">);</span>
-
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="n">Object</span> <span class="nf">invoke</span><span class="o">(</span><span class="kd">final</span> <span class="n">MethodInvocation</span> <span class="n">methodInvocation</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Throwable</span> <span class="o">{</span>
+    <span class="kd">final</span> <span class="n">GlobalTransactional</span> <span class="n">anno</span> <span class="o">=</span> <span class="n">getAnnotation</span><span class="o">(</span><span class="n">methodInvocation</span><span class="o">.</span><span class="na">getMethod</span><span class="o">());</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">anno</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">transactionalTemplate</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="k">new</span> <span class="n">TransactionalExecutor</span><span class="o">()</span> <span class="o">{</span>
+                <span class="nd">@Override</span>
+                <span class="kd">public</span> <span class="n">Object</span> <span class="nf">execute</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">Throwable</span> <span class="o">{</span>
+                    <span class="k">return</span> <span class="n">methodInvocation</span><span class="o">.</span><span class="na">proceed</span><span class="o">();</span>
                 <span class="o">}</span>
-            <span class="o">}</span>
 
+                <span class="nd">@Override</span>
+                <span class="kd">public</span> <span class="kt">int</span> <span class="nf">timeout</span><span class="o">()</span> <span class="o">{</span>
+                    <span class="k">return</span> <span class="n">anno</span><span class="o">.</span><span class="na">timeoutMills</span><span class="o">();</span>
+                <span class="o">}</span>
+
+                <span class="nd">@Override</span>
+                <span class="kd">public</span> <span class="n">String</span> <span class="nf">name</span><span class="o">()</span> <span class="o">{</span>
+                    <span class="n">String</span> <span class="n">name</span> <span class="o">=</span> <span class="n">anno</span><span class="o">.</span><span class="na">name</span><span class="o">();</span>
+                    <span class="k">if</span> <span class="o">(!</span><span class="n">StringUtils</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">(</span><span class="n">name</span><span class="o">))</span> <span class="o">{</span>
+                        <span class="k">return</span> <span class="n">name</span><span class="o">;</span>
+                    <span class="o">}</span>
+                    <span class="k">return</span> <span class="nf">formatMethod</span><span class="o">(</span><span class="n">methodInvocation</span><span class="o">.</span><span class="na">getMethod</span><span class="o">());</span>
+                <span class="o">}</span>
+            <span class="o">});</span>
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">Code</span> <span class="n">code</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">getCode</span><span class="o">();</span>
+            <span class="k">switch</span> <span class="o">(</span><span class="n">code</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">case</span> <span class="nl">RollbackDone:</span>
+                    <span class="k">throw</span> <span class="n">e</span><span class="o">.</span><span class="na">getOriginalException</span><span class="o">();</span>
+                <span class="k">case</span> <span class="nl">BeginFailure:</span>
+                    <span class="n">failureHandler</span><span class="o">.</span><span class="na">onBeginFailure</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">getTransaction</span><span class="o">(),</span> <span class="n">e</span><span class="o">.</span><span class="na">getCause</span><span class="o">());</span>
+                    <span class="k">throw</span> <span class="n">e</span><span class="o">.</span><span class="na">getCause</span><span class="o">();</span>
+                <span class="k">case</span> <span class="nl">CommitFailure:</span>
+                    <span class="n">failureHandler</span><span class="o">.</span><span class="na">onCommitFailure</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">getTransaction</span><span class="o">(),</span> <span class="n">e</span><span class="o">.</span><span class="na">getCause</span><span class="o">());</span>
+                    <span class="k">throw</span> <span class="n">e</span><span class="o">.</span><span class="na">getCause</span><span class="o">();</span>
+                <span class="k">case</span> <span class="nl">RollbackFailure:</span>
+                    <span class="n">failureHandler</span><span class="o">.</span><span class="na">onRollbackFailure</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">getTransaction</span><span class="o">(),</span> <span class="n">e</span><span class="o">.</span><span class="na">getCause</span><span class="o">());</span>
+                    <span class="k">throw</span> <span class="n">e</span><span class="o">.</span><span class="na">getCause</span><span class="o">();</span>
+                <span class="k">default</span><span class="o">:</span>
+                    <span class="k">throw</span> <span class="k">new</span> <span class="nf">ShouldNeverHappenException</span><span class="o">(</span><span class="s">"Unknown TransactionalExecutor.Code: "</span> <span class="o">+</span> <span class="n">code</span><span class="o">);</span>
+
+            <span class="o">}</span>
         <span class="o">}</span>
-        <span class="k">return</span> <span class="n">methodInvocation</span><span class="o">.</span><span class="na">proceed</span><span class="o">();</span>
+
     <span class="o">}</span>
+    <span class="k">return</span> <span class="n">methodInvocation</span><span class="o">.</span><span class="na">proceed</span><span class="o">();</span>
+<span class="o">}</span>
 </code></pre></div></div>
 
-<p>我们重点关注 <code class="highlighter-rouge">TransactionalTemplate</code> 的 <code class="highlighter-rouge">execute</code> 方法，方法如下：</p>
+<p>我们重点关注 <code class="highlighter-rouge">TransactionalTemplate</code> 的 <code class="highlighter-rouge">execute</code> 方法，也就是 TM 的一些方法，方法如下：</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="n">Object</span> <span class="nf">execute</span><span class="o">(</span><span class="n">TransactionalExecutor</span> <span class="n">business</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span> <span class="o">{</span>
 
-        <span class="c1">// 1. get or create a transaction</span>
-        <span class="n">GlobalTransaction</span> <span class="n">tx</span> <span class="o">=</span> <span class="n">GlobalTransactionContext</span><span class="o">.</span><span class="na">getCurrentOrCreate</span><span class="o">();</span>
+    <span class="c1">// 1. get or create a transaction</span>
+    <span class="n">GlobalTransaction</span> <span class="n">tx</span> <span class="o">=</span> <span class="n">GlobalTransactionContext</span><span class="o">.</span><span class="na">getCurrentOrCreate</span><span class="o">();</span>
 
-        <span class="c1">// 2. begin transaction</span>
-        <span class="k">try</span> <span class="o">{</span>
-            <span class="n">tx</span><span class="o">.</span><span class="na">begin</span><span class="o">(</span><span class="n">business</span><span class="o">.</span><span class="na">timeout</span><span class="o">(),</span> <span class="n">business</span><span class="o">.</span><span class="na">name</span><span class="o">());</span>
+    <span class="c1">// 2. begin transaction</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">tx</span><span class="o">.</span><span class="na">begin</span><span class="o">(</span><span class="n">business</span><span class="o">.</span><span class="na">timeout</span><span class="o">(),</span> <span class="n">business</span><span class="o">.</span><span class="na">name</span><span class="o">());</span>
 
-        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">TransactionException</span> <span class="n">txe</span><span class="o">)</span> <span class="o">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span><span class="o">(</span><span class="n">tx</span><span class="o">,</span> <span class="n">txe</span><span class="o">,</span>
-                <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">Code</span><span class="o">.</span><span class="na">BeginFailure</span><span class="o">);</span>
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">TransactionException</span> <span class="n">txe</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span><span class="o">(</span><span class="n">tx</span><span class="o">,</span> <span class="n">txe</span><span class="o">,</span>
+            <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">Code</span><span class="o">.</span><span class="na">BeginFailure</span><span class="o">);</span>
 
-        <span class="o">}</span>
-
-        <span class="n">Object</span> <span class="n">rs</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
-        <span class="k">try</span> <span class="o">{</span>
-
-            <span class="c1">// Do Your Business</span>
-            <span class="n">rs</span> <span class="o">=</span> <span class="n">business</span><span class="o">.</span><span class="na">execute</span><span class="o">();</span>
-
-        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
-
-            <span class="c1">// 3. any business exception, rollback.</span>
-            <span class="k">try</span> <span class="o">{</span>
-                <span class="n">tx</span><span class="o">.</span><span class="na">rollback</span><span class="o">();</span>
-
-                <span class="c1">// 3.1 Successfully rolled back</span>
-                <span class="k">throw</span> <span class="k">new</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span><span class="o">(</span><span class="n">tx</span><span class="o">,</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">Code</span><span class="o">.</span><span class="na">RollbackDone</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
-
-            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">TransactionException</span> <span class="n">txe</span><span class="o">)</span> <span class="o">{</span>
-                <span class="c1">// 3.2 Failed to rollback</span>
-                <span class="k">throw</span> <span class="k">new</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span><span class="o">(</span><span class="n">tx</span><span class="o">,</span> <span class="n">txe</span><span class="o">,</span>
-                    <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">Code</span><span class="o">.</span><span class="na">RollbackFailure</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
-
-            <span class="o">}</span>
-
-        <span class="o">}</span>
-
-        <span class="c1">// 4. everything is fine, commit.</span>
-        <span class="k">try</span> <span class="o">{</span>
-            <span class="n">tx</span><span class="o">.</span><span class="na">commit</span><span class="o">();</span>
-
-        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">TransactionException</span> <span class="n">txe</span><span class="o">)</span> <span class="o">{</span>
-            <span class="c1">// 4.1 Failed to commit</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span><span class="o">(</span><span class="n">tx</span><span class="o">,</span> <span class="n">txe</span><span class="o">,</span>
-                <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">Code</span><span class="o">.</span><span class="na">CommitFailure</span><span class="o">);</span>
-
-        <span class="o">}</span>
-        <span class="k">return</span> <span class="n">rs</span><span class="o">;</span>
     <span class="o">}</span>
+
+    <span class="n">Object</span> <span class="n">rs</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="k">try</span> <span class="o">{</span>
+
+        <span class="c1">// Do Your Business</span>
+        <span class="n">rs</span> <span class="o">=</span> <span class="n">business</span><span class="o">.</span><span class="na">execute</span><span class="o">();</span>
+
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+
+        <span class="c1">// 3. any business exception, rollback.</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">tx</span><span class="o">.</span><span class="na">rollback</span><span class="o">();</span>
+
+            <span class="c1">// 3.1 Successfully rolled back</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span><span class="o">(</span><span class="n">tx</span><span class="o">,</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">Code</span><span class="o">.</span><span class="na">RollbackDone</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">TransactionException</span> <span class="n">txe</span><span class="o">)</span> <span class="o">{</span>
+            <span class="c1">// 3.2 Failed to rollback</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span><span class="o">(</span><span class="n">tx</span><span class="o">,</span> <span class="n">txe</span><span class="o">,</span>
+                <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">Code</span><span class="o">.</span><span class="na">RollbackFailure</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="c1">// 4. everything is fine, commit.</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">tx</span><span class="o">.</span><span class="na">commit</span><span class="o">();</span>
+
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">TransactionException</span> <span class="n">txe</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// 4.1 Failed to commit</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span><span class="o">(</span><span class="n">tx</span><span class="o">,</span> <span class="n">txe</span><span class="o">,</span>
+            <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">Code</span><span class="o">.</span><span class="na">CommitFailure</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="n">rs</span><span class="o">;</span>
+<span class="o">}</span>
 </code></pre></div></div>
 
 <p><code class="highlighter-rouge">execute</code> 方法做了很多事情，我们一步一步分析，首先第一步是 <code class="highlighter-rouge">getCurrentOrCreate</code> 得到当前的全局事务或者创建全局事务。</p>
