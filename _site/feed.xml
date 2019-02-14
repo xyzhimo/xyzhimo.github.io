@@ -5,8 +5,8 @@
     <description>欲将心事付瑶琴。知音少，弦断有谁听。</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Mon, 11 Feb 2019 17:14:05 +0800</pubDate>
-    <lastBuildDate>Mon, 11 Feb 2019 17:14:05 +0800</lastBuildDate>
+    <pubDate>Thu, 14 Feb 2019 12:00:55 +0800</pubDate>
+    <lastBuildDate>Thu, 14 Feb 2019 12:00:55 +0800</lastBuildDate>
     <generator>Jekyll v3.7.4</generator>
     
       <item>
@@ -194,7 +194,7 @@
 &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;p&gt;我们往下看 &lt;code class=&quot;highlighter-rouge&quot;&gt;UndoLogManager&lt;/code&gt; 的 &lt;code class=&quot;highlighter-rouge&quot;&gt;undo()&lt;/code&gt; 方法。后续我们要详细解释 undoLog 的实现，这里也是重点。现在我们就略过一下。&lt;/p&gt;
+&lt;p&gt;我们往下看 &lt;code class=&quot;highlighter-rouge&quot;&gt;UndoLogManager&lt;/code&gt; 的 &lt;code class=&quot;highlighter-rouge&quot;&gt;undo()&lt;/code&gt; 方法。后续我们会开一篇精读细节系列来详细解释 undoLog 的实现。这里我们现在就略过一下。&lt;/p&gt;
 
 &lt;div class=&quot;language-java highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cm&quot;&gt;/**
  * Undo.
@@ -212,7 +212,6 @@
     &lt;span class=&quot;n&quot;&gt;PreparedStatement&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;selectPST&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kc&quot;&gt;null&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;;&lt;/span&gt;
     &lt;span class=&quot;k&quot;&gt;try&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
         &lt;span class=&quot;n&quot;&gt;conn&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dataSourceProxy&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;getPlainConnection&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;();&lt;/span&gt;
-
         &lt;span class=&quot;c1&quot;&gt;// The entire undo process should run in a local transaction.&lt;/span&gt;
         &lt;span class=&quot;n&quot;&gt;conn&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;setAutoCommit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;);&lt;/span&gt;
 
@@ -254,13 +253,13 @@
 &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;p&gt;我们可以看到这里，我们发现它是先取出 UndoLog，再解析 UndoLog，再就是执行 UndoLog，最后删除 UndoLog。&lt;/p&gt;
+&lt;p&gt;我们可以看到这里，我们发现它是先取出 undoLog，再解析 undoLog，再就是执行 undoLog，最后删除 undoLog。&lt;/p&gt;
 
 &lt;p&gt;到此我们已经把 fescar 的一些主要流程都略读完了，后续就是 fescar 一些细节的精读系列了。&lt;/p&gt;
 
 &lt;h3 id=&quot;问题解答&quot;&gt;问题解答&lt;/h3&gt;
-&lt;p&gt;目前全局事务回滚失败或者全局事务提交失败，会有什么处理吗？
-答：比如回滚失败，分为可恢复性错误和不可恢复性错误。不可恢复性错误比如回滚时数据被非 fescar 方式外部修改，这时候回滚失败，fescar 无法处理，无法确定回滚到哪个初态。调用用户的 failureHandler，比如用户可以在实现中对接业务的报警平台，报警出来手工订正数据。&lt;/p&gt;
+&lt;p&gt;目前全局事务回滚失败或者全局事务提交失败，会有什么处理吗？&lt;br /&gt;
+&lt;strong&gt;答：&lt;/strong&gt; 比如回滚失败，分为可恢复性错误和不可恢复性错误。不可恢复性错误比如回滚时数据被非 fescar 方式外部修改，这时候回滚失败，fescar 无法处理，无法确定回滚到哪个初态。调用用户的 failureHandler，比如用户可以在实现中对接业务的报警平台，报警出来手工订正数据。&lt;/p&gt;
 
 &lt;h3 id=&quot;后续补充&quot;&gt;后续补充&lt;/h3&gt;
 &lt;ol&gt;

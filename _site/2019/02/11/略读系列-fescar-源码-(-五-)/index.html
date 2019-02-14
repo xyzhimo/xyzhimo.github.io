@@ -284,7 +284,7 @@
 <span class="o">}</span>
 </code></pre></div></div>
 
-<p>我们往下看 <code class="highlighter-rouge">UndoLogManager</code> 的 <code class="highlighter-rouge">undo()</code> 方法。后续我们要详细解释 undoLog 的实现，这里也是重点。现在我们就略过一下。</p>
+<p>我们往下看 <code class="highlighter-rouge">UndoLogManager</code> 的 <code class="highlighter-rouge">undo()</code> 方法。后续我们会开一篇精读细节系列来详细解释 undoLog 的实现。这里我们现在就略过一下。</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cm">/**
  * Undo.
@@ -302,7 +302,6 @@
     <span class="n">PreparedStatement</span> <span class="n">selectPST</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
     <span class="k">try</span> <span class="o">{</span>
         <span class="n">conn</span> <span class="o">=</span> <span class="n">dataSourceProxy</span><span class="o">.</span><span class="na">getPlainConnection</span><span class="o">();</span>
-
         <span class="c1">// The entire undo process should run in a local transaction.</span>
         <span class="n">conn</span><span class="o">.</span><span class="na">setAutoCommit</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
 
@@ -344,13 +343,13 @@
 <span class="o">}</span>
 </code></pre></div></div>
 
-<p>我们可以看到这里，我们发现它是先取出 UndoLog，再解析 UndoLog，再就是执行 UndoLog，最后删除 UndoLog。</p>
+<p>我们可以看到这里，我们发现它是先取出 undoLog，再解析 undoLog，再就是执行 undoLog，最后删除 undoLog。</p>
 
 <p>到此我们已经把 fescar 的一些主要流程都略读完了，后续就是 fescar 一些细节的精读系列了。</p>
 
 <h3 id="问题解答">问题解答</h3>
-<p>目前全局事务回滚失败或者全局事务提交失败，会有什么处理吗？
-答：比如回滚失败，分为可恢复性错误和不可恢复性错误。不可恢复性错误比如回滚时数据被非 fescar 方式外部修改，这时候回滚失败，fescar 无法处理，无法确定回滚到哪个初态。调用用户的 failureHandler，比如用户可以在实现中对接业务的报警平台，报警出来手工订正数据。</p>
+<p>目前全局事务回滚失败或者全局事务提交失败，会有什么处理吗？<br />
+<strong>答：</strong> 比如回滚失败，分为可恢复性错误和不可恢复性错误。不可恢复性错误比如回滚时数据被非 fescar 方式外部修改，这时候回滚失败，fescar 无法处理，无法确定回滚到哪个初态。调用用户的 failureHandler，比如用户可以在实现中对接业务的报警平台，报警出来手工订正数据。</p>
 
 <h3 id="后续补充">后续补充</h3>
 <ol>
