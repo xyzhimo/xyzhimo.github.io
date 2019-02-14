@@ -84,7 +84,7 @@ public class ContextCoreLoader {
 }
 ```
 
-接下来我们看 dubbo 自定义透传 xid 的 filter代码。
+接下来我们看 dubbo 自定义透传 xid 的 filter代码。不要慌，下面有拆分讲解。
 
 ```java
 @Activate(group = { Constants.PROVIDER, Constants.CONSUMER }, order = 100)
@@ -133,7 +133,7 @@ public class TransactionPropagationFilter implements Filter {
 }
 ```
 
-上面是 dubbo 透传 xid 的自定义 filter 代码，我们看到第一行代码就是 `@Activate(group = { Constants.PROVIDER, Constants.CONSUMER }, order = 100)`。下面分别会对 provider 和 consumer 拆分讲解一下透传的原理。当然具体的 dubbo 源码我还没看，所以这里杰斯不会涉及到 dubbo 源码。
+上面是 dubbo 透传 xid 的自定义 filter 代码，我们看到第一行代码就是 `@Activate(group = { Constants.PROVIDER, Constants.CONSUMER }, order = 100)`。下面分别会对 provider 和 consumer 拆分讲解一下透传的原理。当然具体的 dubbo 源码我还没看，所以这里暂时不会涉及到 dubbo 源码。
 
 如果是 consumer，通常 TM 一定是 consumer，且一定有 xid。删减后重要的代码如下所示
 ```java
