@@ -6,6 +6,14 @@ categories: 精读系列
 keyword: fescar
 ---
 
+### 精读目的
+
+如果之前有了解过 fescar，那么你应该对 xid 不会感到陌生。如果你不是很了解 fescar，也不清楚 xid 在其中的作用，我这里从 fescar 官方 wiki 中截了一张图来你来了解一下 xid 在其中的重要性。
+<br>
+![xid 在 fescar 的重要性](https://zhimo-1252091368.cos.ap-chengdu.myqcloud.com/blog/20190215103948.png)
+<br>
+所以本篇文章的目的就为了让你对 xid 的生成，传递有一个
+
 ### 阅读内容
 
 我们先看一下 xid 在 TM 端的代码，先从 `begin()` 方法开始。
@@ -144,7 +152,7 @@ public class TransactionPropagationFilter implements Filter {
 
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
-        // 获取 TM 从 TC 得到的 xid
+        // 获取 TM 放入上下文的 xid
         String xid = RootContext.getXID();
         // 将其 xid 放入其 RpcContext 中
         RpcContext.getContext().setAttachment(RootContext.KEY_XID, xid);
