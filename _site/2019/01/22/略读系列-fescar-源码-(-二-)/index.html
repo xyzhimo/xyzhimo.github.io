@@ -349,12 +349,14 @@
     <span class="k">try</span> <span class="o">{</span>
         <span class="n">connectionProxy</span><span class="o">.</span><span class="na">setAutoCommit</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
         <span class="c1">// 如果某个线程抢占锁失败的话，睡眠一会，重新唤起。直到重试最大次数后，如果还失败，就抛出错误</span>
+        <span class="c1">// 如果出现提交失败，锁冲突，事务回滚</span>
         <span class="k">while</span> <span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="o">{</span>
             <span class="k">try</span> <span class="o">{</span>
                 <span class="n">result</span> <span class="o">=</span> <span class="n">executeAutoCommitFalse</span><span class="o">(</span><span class="n">args</span><span class="o">);</span>
                 <span class="n">connectionProxy</span><span class="o">.</span><span class="na">commit</span><span class="o">();</span>
                 <span class="k">break</span><span class="o">;</span>
             <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">LockConflictException</span> <span class="n">lockConflict</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">connectionProxy</span><span class="o">.</span><span class="na">getTargetConnection</span><span class="o">().</span><span class="na">rollback</span><span class="o">();</span>
                 <span class="n">lockRetryController</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="n">lockConflict</span><span class="o">);</span>
             <span class="o">}</span>
         <span class="o">}</span>
