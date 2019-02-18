@@ -111,7 +111,7 @@
 
 <h3 id="阅读内容">阅读内容</h3>
 
-<h5 id="1-undolog-的格式">1. undoLog 的格式</h5>
+<h4 id="1-undolog-的格式">1. undoLog 的格式</h4>
 
 <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
 	</span><span class="s2">"branchId"</span><span class="p">:</span><span class="w"> </span><span class="mi">641789253</span><span class="p">,</span><span class="w">
@@ -158,7 +158,7 @@
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
 
-<h5 id="2-undolog-存储源码剖析">2. undoLog 存储源码剖析</h5>
+<h4 id="2-undolog-存储源码剖析">2. undoLog 存储源码剖析</h4>
 
 <p>在抽象类 <code class="highlighter-rouge">AbstractDMLBaseExecutor</code> 的 <code class="highlighter-rouge">executeAutoCommitFalse()</code> 方法中我们可以看到 undoLog 的 beforeImage 和 afterImage。</p>
 
@@ -306,7 +306,7 @@
 <span class="o">}</span>
 </code></pre></div></div>
 
-<h5 id="3-undolog-恢复源码剖析">3. undoLog 恢复源码剖析</h5>
+<h4 id="3-undolog-恢复源码剖析">3. undoLog 恢复源码剖析</h4>
 
 <p>当 RM 收到 TC 发起的分支事务回滚请求时，RM 会取出 undoLog，进行 undo 操作。操作大概如下：</p>
 <ol>

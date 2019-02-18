@@ -14,7 +14,7 @@ keyword: fescar
 
 ### 阅读内容
 
-##### 1. undoLog 的格式
+#### 1. undoLog 的格式
 
 ```json
 {
@@ -62,7 +62,7 @@ keyword: fescar
 }
 ```
 
-##### 2. undoLog 存储源码剖析
+#### 2. undoLog 存储源码剖析
 
 在抽象类 `AbstractDMLBaseExecutor` 的 `executeAutoCommitFalse()` 方法中我们可以看到 undoLog 的 beforeImage 和 afterImage。
 
@@ -216,7 +216,7 @@ public static void flushUndoLogs(ConnectionProxy cp) throws SQLException {
 }
 ```
 
-##### 3. undoLog 恢复源码剖析
+#### 3. undoLog 恢复源码剖析
 
 当 RM 收到 TC 发起的分支事务回滚请求时，RM 会取出 undoLog，进行 undo 操作。操作大概如下：
 1. 根据 xid, branchId 找到 branchUndoLog。
