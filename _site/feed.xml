@@ -5,8 +5,8 @@
     <description>欲将心事付瑶琴。知音少，弦断有谁听。</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Mon, 18 Feb 2019 20:15:18 +0800</pubDate>
-    <lastBuildDate>Mon, 18 Feb 2019 20:15:18 +0800</lastBuildDate>
+    <pubDate>Mon, 18 Feb 2019 20:17:36 +0800</pubDate>
+    <lastBuildDate>Mon, 18 Feb 2019 20:17:36 +0800</lastBuildDate>
     <generator>Jekyll v3.7.4</generator>
     
       <item>
@@ -14,15 +14,14 @@
         <description>&lt;h3 id=&quot;精读目的&quot;&gt;精读目的&lt;/h3&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;undoLog 在 fescar 框架中有什么作用？&lt;br /&gt;
-&lt;strong&gt;答：&lt;/strong&gt; fescar 的理念是 90% 的情况下都是提交，所以分支本地事务是在第一阶段就提交了。这时如果其他分支事务出现了异常，需要已经提交的分支事务进行回滚，这个时候，undoLog 就体现它的作用了 —— 依据 undoLog 存储的镜像数据，我们可以将数据进行回滚。&lt;/li&gt;
+  &lt;li&gt;undoLog 在 fescar 框架中有什么作用？&lt;br /&gt;&lt;/li&gt;
 &lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;答：&lt;/strong&gt; fescar 的理念是 90% 的情况下都是提交，所以分支本地事务是在第一阶段就提交了。这时如果其他分支事务出现了异常，需要已经提交的分支事务进行回滚，这个时候，undoLog 就体现它的作用了 —— 依据 undoLog 存储的镜像数据，我们可以将数据进行回滚。&lt;/p&gt;
 
 &lt;h3 id=&quot;阅读内容&quot;&gt;阅读内容&lt;/h3&gt;
 
-&lt;ol&gt;
-  &lt;li&gt;undoLog 的格式&lt;/li&gt;
-&lt;/ol&gt;
+&lt;h5 id=&quot;1-undolog-的格式&quot;&gt;1. undoLog 的格式&lt;/h5&gt;
 
 &lt;div class=&quot;language-json highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
 	&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;branchId&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;641789253&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
@@ -69,9 +68,7 @@
 &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;ol&gt;
-  &lt;li&gt;undoLog 存储源码剖析&lt;/li&gt;
-&lt;/ol&gt;
+&lt;h5 id=&quot;2-undolog-存储源码剖析&quot;&gt;2. undoLog 存储源码剖析&lt;/h5&gt;
 
 &lt;p&gt;在抽象类 &lt;code class=&quot;highlighter-rouge&quot;&gt;AbstractDMLBaseExecutor&lt;/code&gt; 的 &lt;code class=&quot;highlighter-rouge&quot;&gt;executeAutoCommitFalse()&lt;/code&gt; 方法中我们可以看到 undoLog 的 beforeImage 和 afterImage。&lt;/p&gt;
 
@@ -219,9 +216,7 @@
 &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;ol&gt;
-  &lt;li&gt;undoLog 恢复源码剖析&lt;/li&gt;
-&lt;/ol&gt;
+&lt;h5 id=&quot;3-undolog-恢复源码剖析&quot;&gt;3. undoLog 恢复源码剖析&lt;/h5&gt;
 
 &lt;p&gt;当 RM 收到 TC 发起的分支事务回滚请求时，RM 会取出 undoLog，进行 undo 操作。操作大概如下：&lt;/p&gt;
 &lt;ol&gt;

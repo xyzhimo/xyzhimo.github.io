@@ -9,11 +9,12 @@ keyword: fescar
 ### 精读目的
 
 - undoLog 在 fescar 框架中有什么作用？<br>
+
 **答：** fescar 的理念是 90% 的情况下都是提交，所以分支本地事务是在第一阶段就提交了。这时如果其他分支事务出现了异常，需要已经提交的分支事务进行回滚，这个时候，undoLog 就体现它的作用了 —— 依据 undoLog 存储的镜像数据，我们可以将数据进行回滚。
 
 ### 阅读内容
 
-1. undoLog 的格式
+##### 1. undoLog 的格式
 
 ```json
 {
@@ -61,7 +62,7 @@ keyword: fescar
 }
 ```
 
-2. undoLog 存储源码剖析
+##### 2. undoLog 存储源码剖析
 
 在抽象类 `AbstractDMLBaseExecutor` 的 `executeAutoCommitFalse()` 方法中我们可以看到 undoLog 的 beforeImage 和 afterImage。
 
@@ -215,7 +216,7 @@ public static void flushUndoLogs(ConnectionProxy cp) throws SQLException {
 }
 ```
 
-3. undoLog 恢复源码剖析
+##### 3. undoLog 恢复源码剖析
 
 当 RM 收到 TC 发起的分支事务回滚请求时，RM 会取出 undoLog，进行 undo 操作。操作大概如下：
 1. 根据 xid, branchId 找到 branchUndoLog。
