@@ -10,7 +10,7 @@ keyword: fescar
 
 - undoLog 在 fescar 框架中有什么作用？<br>
 
-**答：** fescar 的理念是 90% 的情况下都是提交，所以分支本地事务是在第一阶段就提交了。这时如果其他分支事务出现了异常，需要已经提交的分支事务进行回滚，这个时候，undoLog 就体现它的作用了 —— 依据 undoLog 存储的镜像数据，我们可以将数据进行回滚。
+**答：** fescar 的理念是 90% 的情况下都是提交，所以分支本地事务是在第一阶段就提交了。这时如果其他分支事务出现了异常，需要已经提交的分支事务进行回滚。这个时候，undoLog 就体现它的作用了 —— 依据 undoLog 存储的前后镜像数据，我们可以将数据进行回滚。
 
 ### 阅读内容
 
@@ -18,53 +18,53 @@ keyword: fescar
 
 ```json
 {
-	"branchId": 641789253,
-	"undoItems": [{
-		"afterImage": {
-			"rows": [{
-				"fields": [{
-					"name": "id",
-					"type": 4,
-					"value": 1
-				}, {
-					"name": "name",
-					"type": 12,
-					"value": "GTS"
-				}, {
-					"name": "since",
-					"type": 12,
-					"value": "2014"
-				}]
-			}],
-			"tableName": "product"
-		},
-		"beforeImage": {
-			"rows": [{
-				"fields": [{
-					"name": "id",
-					"type": 4,
-					"value": 1
-				}, {
-					"name": "name",
-					"type": 12,
-					"value": "TXC"
-				}, {
-					"name": "since",
-					"type": 12,
-					"value": "2014"
-				}]
-			}],
-			"tableName": "product"
-		},
-		"sqlType": "UPDATE"
-	}],
-	"xid": "xid:xxx"
+    "branchId": 641789253,
+    "undoItems": [{
+        "afterImage": {
+            "rows": [{
+                "fields": [{
+                    "name": "id",
+                    "type": 4,
+                    "value": 1
+                }, {
+                    "name": "name",
+                    "type": 12,
+                    "value": "GTS"
+                }, {
+                    "name": "since",
+                    "type": 12,
+                    "value": "2014"
+                }]
+            }],
+            "tableName": "product"
+        },
+        "beforeImage": {
+            "rows": [{
+                "fields": [{
+                    "name": "id",
+                    "type": 4,
+                    "value": 1
+                }, {
+                    "name": "name",
+                    "type": 12,
+                    "value": "TXC"
+                }, {
+                    "name": "since",
+                    "type": 12,
+                    "value": "2014"
+                }]
+            }],
+            "tableName": "product"
+        },
+        "sqlType": "UPDATE"
+    }],
+    "xid": "xid:xxx"
 }
 ```
 
 #### 2. undoLog 存储源码剖析
 
-在抽象类 `AbstractDMLBaseExecutor` 的 `executeAutoCommitFalse()` 方法中我们可以看到 undoLog 的 beforeImage 和 afterImage。
+在抽象类 `AbstractDMLBaseExecutor` 的 `executeAutoCommitFalse()` 方法中我们可以看到 undoLog 构建 beforeImage 和 afterImage 的代码。
 
 ```java
 protected T executeAutoCommitFalse(Object[] args) throws Throwable {

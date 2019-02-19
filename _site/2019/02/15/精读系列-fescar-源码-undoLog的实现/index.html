@@ -107,60 +107,60 @@
   <li>undoLog 在 fescar 框架中有什么作用？<br /></li>
 </ul>
 
-<p><strong>答：</strong> fescar 的理念是 90% 的情况下都是提交，所以分支本地事务是在第一阶段就提交了。这时如果其他分支事务出现了异常，需要已经提交的分支事务进行回滚，这个时候，undoLog 就体现它的作用了 —— 依据 undoLog 存储的镜像数据，我们可以将数据进行回滚。</p>
+<p><strong>答：</strong> fescar 的理念是 90% 的情况下都是提交，所以分支本地事务是在第一阶段就提交了。这时如果其他分支事务出现了异常，需要已经提交的分支事务进行回滚。这个时候，undoLog 就体现它的作用了 —— 依据 undoLog 存储的前后镜像数据，我们可以将数据进行回滚。</p>
 
 <h3 id="阅读内容">阅读内容</h3>
 
 <h4 id="1-undolog-的格式">1. undoLog 的格式</h4>
 
 <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
-	</span><span class="s2">"branchId"</span><span class="p">:</span><span class="w"> </span><span class="mi">641789253</span><span class="p">,</span><span class="w">
-	</span><span class="s2">"undoItems"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="w">
-		</span><span class="s2">"afterImage"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-			</span><span class="s2">"rows"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="w">
-				</span><span class="s2">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="w">
-					</span><span class="s2">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"id"</span><span class="p">,</span><span class="w">
-					</span><span class="s2">"type"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w">
-					</span><span class="s2">"value"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w">
-				</span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="w">
-					</span><span class="s2">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"name"</span><span class="p">,</span><span class="w">
-					</span><span class="s2">"type"</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span><span class="w">
-					</span><span class="s2">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GTS"</span><span class="w">
-				</span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="w">
-					</span><span class="s2">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"since"</span><span class="p">,</span><span class="w">
-					</span><span class="s2">"type"</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span><span class="w">
-					</span><span class="s2">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2014"</span><span class="w">
-				</span><span class="p">}]</span><span class="w">
-			</span><span class="p">}],</span><span class="w">
-			</span><span class="s2">"tableName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"product"</span><span class="w">
-		</span><span class="p">},</span><span class="w">
-		</span><span class="s2">"beforeImage"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-			</span><span class="s2">"rows"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="w">
-				</span><span class="s2">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="w">
-					</span><span class="s2">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"id"</span><span class="p">,</span><span class="w">
-					</span><span class="s2">"type"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w">
-					</span><span class="s2">"value"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w">
-				</span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="w">
-					</span><span class="s2">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"name"</span><span class="p">,</span><span class="w">
-					</span><span class="s2">"type"</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span><span class="w">
-					</span><span class="s2">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"TXC"</span><span class="w">
-				</span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="w">
-					</span><span class="s2">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"since"</span><span class="p">,</span><span class="w">
-					</span><span class="s2">"type"</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span><span class="w">
-					</span><span class="s2">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2014"</span><span class="w">
-				</span><span class="p">}]</span><span class="w">
-			</span><span class="p">}],</span><span class="w">
-			</span><span class="s2">"tableName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"product"</span><span class="w">
-		</span><span class="p">},</span><span class="w">
-		</span><span class="s2">"sqlType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"UPDATE"</span><span class="w">
-	</span><span class="p">}],</span><span class="w">
-	</span><span class="s2">"xid"</span><span class="p">:</span><span class="w"> </span><span class="s2">"xid:xxx"</span><span class="w">
+    </span><span class="s2">"branchId"</span><span class="p">:</span><span class="w"> </span><span class="mi">641789253</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"undoItems"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="w">
+        </span><span class="s2">"afterImage"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="s2">"rows"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="w">
+                </span><span class="s2">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="w">
+                    </span><span class="s2">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"id"</span><span class="p">,</span><span class="w">
+                    </span><span class="s2">"type"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w">
+                    </span><span class="s2">"value"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w">
+                </span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="w">
+                    </span><span class="s2">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"name"</span><span class="p">,</span><span class="w">
+                    </span><span class="s2">"type"</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span><span class="w">
+                    </span><span class="s2">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GTS"</span><span class="w">
+                </span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="w">
+                    </span><span class="s2">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"since"</span><span class="p">,</span><span class="w">
+                    </span><span class="s2">"type"</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span><span class="w">
+                    </span><span class="s2">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2014"</span><span class="w">
+                </span><span class="p">}]</span><span class="w">
+            </span><span class="p">}],</span><span class="w">
+            </span><span class="s2">"tableName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"product"</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="s2">"beforeImage"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="s2">"rows"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="w">
+                </span><span class="s2">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="w">
+                    </span><span class="s2">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"id"</span><span class="p">,</span><span class="w">
+                    </span><span class="s2">"type"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w">
+                    </span><span class="s2">"value"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w">
+                </span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="w">
+                    </span><span class="s2">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"name"</span><span class="p">,</span><span class="w">
+                    </span><span class="s2">"type"</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span><span class="w">
+                    </span><span class="s2">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"TXC"</span><span class="w">
+                </span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="w">
+                    </span><span class="s2">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"since"</span><span class="p">,</span><span class="w">
+                    </span><span class="s2">"type"</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span><span class="w">
+                    </span><span class="s2">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2014"</span><span class="w">
+                </span><span class="p">}]</span><span class="w">
+            </span><span class="p">}],</span><span class="w">
+            </span><span class="s2">"tableName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"product"</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="s2">"sqlType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"UPDATE"</span><span class="w">
+    </span><span class="p">}],</span><span class="w">
+    </span><span class="s2">"xid"</span><span class="p">:</span><span class="w"> </span><span class="s2">"xid:xxx"</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
 
 <h4 id="2-undolog-存储源码剖析">2. undoLog 存储源码剖析</h4>
 
-<p>在抽象类 <code class="highlighter-rouge">AbstractDMLBaseExecutor</code> 的 <code class="highlighter-rouge">executeAutoCommitFalse()</code> 方法中我们可以看到 undoLog 的 beforeImage 和 afterImage。</p>
+<p>在抽象类 <code class="highlighter-rouge">AbstractDMLBaseExecutor</code> 的 <code class="highlighter-rouge">executeAutoCommitFalse()</code> 方法中我们可以看到 undoLog 构建 beforeImage 和 afterImage 的代码。</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">protected</span> <span class="n">T</span> <span class="nf">executeAutoCommitFalse</span><span class="o">(</span><span class="n">Object</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Throwable</span> <span class="o">{</span>
     <span class="c1">// 交由子类 InsertExecutor, UpdateExecutor, DeleteExecutor 去执行这段逻辑</span>
