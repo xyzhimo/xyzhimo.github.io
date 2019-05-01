@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-    <title>【闲碎系列】事务的概念 &mdash; 知末的博客</title>
+    <title>【精读系列】fescar 源码 TC 锁的实现 &mdash; 知末的博客</title>
     <link rel="stylesheet" href="http://localhost:4000/assets/vendor/primer-css/css/primer.css">
     <link rel="stylesheet" href="http://localhost:4000/assets/vendor/primer-markdown/dist/user-content.min.css">
     <link rel="stylesheet" href="http://localhost:4000/assets/vendor/octicons/octicons/octicons.css">
@@ -21,28 +21,28 @@
     
 
     
-    <link rel="canonical" href="http://localhost:4000/2019/01/07/%E9%97%B2%E7%A2%8E%E7%B3%BB%E5%88%97-%E4%BA%8B%E5%8A%A1%E7%9A%84%E6%A6%82%E5%BF%B5/">
+    <link rel="canonical" href="http://localhost:4000/2019/02/15/%E7%B2%BE%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-TC-%E9%94%81%E7%9A%84%E5%AE%9E%E7%8E%B0/">
     <link rel="alternate" type="application/atom+xml" title="知末的博客" href="http://localhost:4000/feed.xml">
     <link rel="shortcut icon" href="http://localhost:4000/favicon.ico">
     
-    <meta property="og:title" content="【闲碎系列】事务的概念">
+    <meta property="og:title" content="【精读系列】fescar 源码 TC 锁的实现">
       
     <meta name="keywords" content="知末, zhimo, xyzhimo">
     <meta name="og:keywords" content="知末, zhimo, xyzhimo">
       
-    <meta name="description" content="写在前面由于今天晚上和Tony老师聊了一会天，导致今天学习的东西有点少。但还是需要总结一下的">
-    <meta name="og:description" content="写在前面由于今天晚上和Tony老师聊了一会天，导致今天学习的东西有点少。但还是需要总结一下的">
+    <meta name="description" content="精读目的">
+    <meta name="og:description" content="精读目的">
       
     
     
         
     
-    <meta property="og:url" content="http://localhost:4000/2019/01/07/%E9%97%B2%E7%A2%8E%E7%B3%BB%E5%88%97-%E4%BA%8B%E5%8A%A1%E7%9A%84%E6%A6%82%E5%BF%B5/">
+    <meta property="og:url" content="http://localhost:4000/2019/02/15/%E7%B2%BE%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-TC-%E9%94%81%E7%9A%84%E5%AE%9E%E7%8E%B0/">
     <meta property="og:site_name" content="知末的博客">
     <meta property="og:type" content="article">
     <meta property="og:locale" content="zh_CN" />
     
-    <meta property="article:published_time" content="2019-01-07">
+    <meta property="article:published_time" content="2019-02-15">
     
     <script src="http://localhost:4000/assets/vendor/jquery/dist/jquery.min.js"></script>
     <script src="http://localhost:4000/assets/js/jquery-ui.js"></script>
@@ -72,22 +72,22 @@
     </header>
     <!-- / header -->
 
-    <section class="collection-head small geopattern" data-pattern-id="【闲碎系列】事务的概念">
+    <section class="collection-head small geopattern" data-pattern-id="【精读系列】fescar 源码">
 <div class="container">
   <div class="columns">
     <div class="column three-fourths">
       <div class="collection-title">
-        <h1 class="collection-header">【闲碎系列】事务的概念</h1>
+        <h1 class="collection-header">【精读系列】fescar 源码 TC 锁的实现</h1>
         <div class="collection-info">
           
           <span class="meta-info">
-            <span class="octicon octicon-calendar"></span> 2019/01/07
+            <span class="octicon octicon-calendar"></span> 2019/02/15
           </span>
           
           
           <span class="meta-info">
             <span class="octicon octicon-file-directory"></span>
-            <a href="http://localhost:4000/categories/#闲碎系列" title="闲碎系列">闲碎系列</a>
+            <a href="http://localhost:4000/categories/#精读系列" title="精读系列">精读系列</a>
           </span>
           
         </div>
@@ -101,25 +101,22 @@
 <div class="columns">
   <div class="column three-fourths" >
     <article class="article-content markdown-body">
-    <h3 id="写在前面">写在前面</h3>
-<p>由于今天晚上和Tony老师聊了一会天，导致今天学习的东西有点少。但还是需要总结一下的</p>
+    <h3 id="精读目的">精读目的</h3>
+
+<blockquote>
+  <p>在数据库本地隔离级别 <strong>读已提交</strong> 或以上的前提下，fescar 设计了由事务协调器维护的 <strong>全局写排他锁</strong>，来保证事务间的 <strong>写隔离</strong>，将全局事务默认定义在 <strong>读未提交</strong> 的隔离级别上。</p>
+</blockquote>
+
+<p>以上是 fescar 在 wiki 上概览的引用内容，我们可以发现好几个重要字眼。如果你不是很清楚上面引用意思的话，不妨看一下我前面的文章 <a href="https://xyzhimo.github.io/2019/01/07/%E9%97%B2%E7%A2%8E%E7%B3%BB%E5%88%97-%E4%BA%8B%E5%8A%A1%E7%9A%84%E6%A6%82%E5%BF%B5/">【闲碎系列】事务的概念</a>，你大概就能明白这是什么意思了。</p>
+
+<p>我这里再总结一下，全局写排他锁能保证的只是 <strong>更新丢失不会出现</strong>。如果需要保证不会出现 <strong>脏读</strong>，你需要在未提交的写事务中禁止读事务的进入，是的，fescar 也提供了这种实现。所以，我们今天的目的就是剖析 fescar 的 <strong>全局写排他锁</strong> 和 <strong>未提交的写事务中禁止读事务进入</strong> 的实现。</p>
 
 <h3 id="阅读内容">阅读内容</h3>
-<ul>
-  <li><a href="https://juejin.im/post/5aa3c7736fb9a028bb189bca">分布式事务解决方案</a></li>
-  <li><a href="https://www.zhihu.com/question/31346392">关于事务ACID的回答</a></li>
-</ul>
 
-<h3 id="总结">总结</h3>
+<h3 id="后续补充">后续补充</h3>
 <ol>
-  <li>为什么需要有分布式事务？
-答：随着微服务架构趋势，各个系统可能有着各自独立的数据库。而现在的数据库系统是不支持跨数据库事务的，他们只支持本地事务。</li>
-  <li>什么是本地事务？
-答：本地事务是指同一数据库中的一组操作集合，当其中某个操作出现问题时，需要回滚前面的操作行为。也就是说事务一定是一起成功，或者一起失败。</li>
-  <li>事务的ACID？
-答：参考两篇文章的回答。A是原子性，表示事务要么一起提交，要么一起失败。深入一点就是，记录之前的版本，允许回滚。C是一致性，一个回答说事务开始和结束不会破坏数据的完整性约束，有道理。还有一个回答是事务的开始到结束的中间状态不会被其他事务看到。I是隔离性，古板的回答估计也是事务的执行是相互独立的，它们不会相互干扰，一个事务不会看到另一个正在运行过程中的事务的数据。而沈询大大给的回答是：<strong>适当的破坏一致性来提升性能和并行度</strong>。D是持久性，指的就是事务一旦提交，就不会出现数据丢失。</li>
-  <li>事务的隔离级别？
-答：数据库中要求的隔离性是强隔离，但正如那句话说的<strong>适当的破坏一致性来提升性能和并行度</strong>。所以其实隔离性是分为好几个级别的，读未提交，读已提交，重复读，串行化。这里我想这样写，读写事务之间的锁共享。主要会有：<strong>更新丢失</strong>，<strong>脏读</strong>，<strong>重复读</strong>，<strong>幻读</strong> 等情况出现。读未提交：写写事务没有锁就会出现更新丢失。读已提交：未提交的写事务不允许读事务进入，即可保证不会出现脏读。重复读：读事务不允许写事务进入，即可保证不会出现同一事务两次读到不同的数据的情况。串行：所有事务都必须串行执行。</li>
+  <li>隔离性</li>
+  <li>RM 和 TC 的 netty 封装</li>
 </ol>
 
     </article>
@@ -137,7 +134,7 @@
         <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
         <script>
         var gitalk = new Gitalk({
-            id: '/2019/01/07/%E9%97%B2%E7%A2%8E%E7%B3%BB%E5%88%97-%',
+            id: '/2019/02/15/%E7%B2%BE%E8%AF%BB%E7%B3%BB%E5%88%97-f',
             clientID: '3e6a5dbc89d96d203758',
             clientSecret: 'a04051de7608c9cebb89add9d1496db32e09e798',
             repo: 'blog-comments',

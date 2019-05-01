@@ -5,9 +5,38 @@
     <description>欲将心事付瑶琴。知音少，弦断有谁听。</description>
     <link>http://localhost:4000/</link>
     <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 19 Feb 2019 10:41:51 +0800</pubDate>
-    <lastBuildDate>Tue, 19 Feb 2019 10:41:51 +0800</lastBuildDate>
+    <pubDate>Thu, 21 Feb 2019 15:37:39 +0800</pubDate>
+    <lastBuildDate>Thu, 21 Feb 2019 15:37:39 +0800</lastBuildDate>
     <generator>Jekyll v3.7.4</generator>
+    
+      <item>
+        <title>【精读系列】fescar 源码 TC 锁的实现</title>
+        <description>&lt;h3 id=&quot;精读目的&quot;&gt;精读目的&lt;/h3&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;在数据库本地隔离级别 &lt;strong&gt;读已提交&lt;/strong&gt; 或以上的前提下，fescar 设计了由事务协调器维护的 &lt;strong&gt;全局写排他锁&lt;/strong&gt;，来保证事务间的 &lt;strong&gt;写隔离&lt;/strong&gt;，将全局事务默认定义在 &lt;strong&gt;读未提交&lt;/strong&gt; 的隔离级别上。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;以上是 fescar 在 wiki 上概览的引用内容，我们可以发现好几个重要字眼。如果你不是很清楚上面引用意思的话，不妨看一下我前面的文章 &lt;a href=&quot;https://xyzhimo.github.io/2019/01/07/%E9%97%B2%E7%A2%8E%E7%B3%BB%E5%88%97-%E4%BA%8B%E5%8A%A1%E7%9A%84%E6%A6%82%E5%BF%B5/&quot;&gt;【闲碎系列】事务的概念&lt;/a&gt;，你大概就能明白这是什么意思了。&lt;/p&gt;
+
+&lt;p&gt;我这里再总结一下，全局写排他锁能保证的只是 &lt;strong&gt;更新丢失不会出现&lt;/strong&gt;。如果需要保证不会出现 &lt;strong&gt;脏读&lt;/strong&gt;，你需要在未提交的写事务中禁止读事务的进入，是的，fescar 也提供了这种实现。所以，我们今天的目的就是剖析 fescar 的 &lt;strong&gt;全局写排他锁&lt;/strong&gt; 和 &lt;strong&gt;未提交的写事务中禁止读事务进入&lt;/strong&gt; 的实现。&lt;/p&gt;
+
+&lt;h3 id=&quot;阅读内容&quot;&gt;阅读内容&lt;/h3&gt;
+
+&lt;h3 id=&quot;后续补充&quot;&gt;后续补充&lt;/h3&gt;
+&lt;ol&gt;
+  &lt;li&gt;隔离性&lt;/li&gt;
+  &lt;li&gt;RM 和 TC 的 netty 封装&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+        <pubDate>Fri, 15 Feb 2019 18:08:13 +0800</pubDate>
+        <link>http://localhost:4000/2019/02/15/%E7%B2%BE%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-TC-%E9%94%81%E7%9A%84%E5%AE%9E%E7%8E%B0/</link>
+        <guid isPermaLink="true">http://localhost:4000/2019/02/15/%E7%B2%BE%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-TC-%E9%94%81%E7%9A%84%E5%AE%9E%E7%8E%B0/</guid>
+        
+        
+        <category>精读系列</category>
+        
+      </item>
     
       <item>
         <title>【精读系列】fescar 源码 undoLog 的实现</title>
@@ -2073,7 +2102,7 @@ E：最终一致。&lt;strong&gt;同一数据的不同副本&lt;/strong&gt;的�
   &lt;li&gt;事务的ACID？
 答：参考两篇文章的回答。A是原子性，表示事务要么一起提交，要么一起失败。深入一点就是，记录之前的版本，允许回滚。C是一致性，一个回答说事务开始和结束不会破坏数据的完整性约束，有道理。还有一个回答是事务的开始到结束的中间状态不会被其他事务看到。I是隔离性，古板的回答估计也是事务的执行是相互独立的，它们不会相互干扰，一个事务不会看到另一个正在运行过程中的事务的数据。而沈询大大给的回答是：&lt;strong&gt;适当的破坏一致性来提升性能和并行度&lt;/strong&gt;。D是持久性，指的就是事务一旦提交，就不会出现数据丢失。&lt;/li&gt;
   &lt;li&gt;事务的隔离级别？
-答：数据库中要求的隔离性是强隔离，但正如那句话说的&lt;strong&gt;适当的破坏一致性来提升性能和并行度&lt;/strong&gt;。所以其实隔离性是分为好几个级别的，读未提交，读已提交，重复读，串行化。这里我想这样写，读写事务之间的锁共享。主要会有：&lt;strong&gt;更新丢失&lt;/strong&gt;，&lt;strong&gt;脏读&lt;/strong&gt;，&lt;strong&gt;重复读&lt;/strong&gt;，&lt;strong&gt;幻读&lt;/strong&gt;等情况出现。读未提交：写写事务没有锁就会出现更新丢失。读已提交：未提交的写事务不允许读事务进入，即可保证不会出现脏读。重复读：读事务不允许写事务进入，即可保证不会出现同一事务两次读到不同的数据的情况。串行：所有事务都必须串行执行。&lt;/li&gt;
+答：数据库中要求的隔离性是强隔离，但正如那句话说的&lt;strong&gt;适当的破坏一致性来提升性能和并行度&lt;/strong&gt;。所以其实隔离性是分为好几个级别的，读未提交，读已提交，重复读，串行化。这里我想这样写，读写事务之间的锁共享。主要会有：&lt;strong&gt;更新丢失&lt;/strong&gt;，&lt;strong&gt;脏读&lt;/strong&gt;，&lt;strong&gt;重复读&lt;/strong&gt;，&lt;strong&gt;幻读&lt;/strong&gt; 等情况出现。读未提交：写写事务没有锁就会出现更新丢失。读已提交：未提交的写事务不允许读事务进入，即可保证不会出现脏读。重复读：读事务不允许写事务进入，即可保证不会出现同一事务两次读到不同的数据的情况。串行：所有事务都必须串行执行。&lt;/li&gt;
 &lt;/ol&gt;
 </description>
         <pubDate>Mon, 07 Jan 2019 19:55:10 +0800</pubDate>
