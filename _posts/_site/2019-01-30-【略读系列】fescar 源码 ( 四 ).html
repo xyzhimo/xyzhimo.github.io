@@ -1,0 +1,400 @@
+<h3 id="参考文献">参考文献</h3>
+
+<ul>
+  <li><a href="https://github.com/alibaba/fescar/wiki/%E6%A6%82%E8%A7%88">fescar概览</a></li>
+</ul>
+
+<h3 id="代码走读">代码走读</h3>
+
+<p>我们在<a href="https://xyzhimo.github.io/2019/01/21/%E7%95%A5%E8%AF%BB%E7%B3%BB%E5%88%97-fescar-%E6%BA%90%E7%A0%81-(-%E4%B8%80-)/">fescar 略读系列一</a>讲述了 TM 的一些方法，我们现在再看回顾一下 <code class="highlighter-rouge">TransactionalTemplate</code> ( TM ) 至关重要的 <code class="highlighter-rouge">execute()</code> 方法</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="n">Object</span> <span class="nf">execute</span><span class="o">(</span><span class="n">TransactionalExecutor</span> <span class="n">business</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span> <span class="o">{</span>
+
+    <span class="c1">// 1. get or create a transaction</span>
+    <span class="n">GlobalTransaction</span> <span class="n">tx</span> <span class="o">=</span> <span class="n">GlobalTransactionContext</span><span class="o">.</span><span class="na">getCurrentOrCreate</span><span class="o">();</span>
+
+    <span class="c1">// 2. begin transaction</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">tx</span><span class="o">.</span><span class="na">begin</span><span class="o">(</span><span class="n">business</span><span class="o">.</span><span class="na">timeout</span><span class="o">(),</span> <span class="n">business</span><span class="o">.</span><span class="na">name</span><span class="o">());</span>
+
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">TransactionException</span> <span class="n">txe</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span><span class="o">(</span><span class="n">tx</span><span class="o">,</span> <span class="n">txe</span><span class="o">,</span>
+            <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">Code</span><span class="o">.</span><span class="na">BeginFailure</span><span class="o">);</span>
+
+    <span class="o">}</span>
+
+    <span class="n">Object</span> <span class="n">rs</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="k">try</span> <span class="o">{</span>
+
+        <span class="c1">// Do Your Business</span>
+        <span class="n">rs</span> <span class="o">=</span> <span class="n">business</span><span class="o">.</span><span class="na">execute</span><span class="o">();</span>
+
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+
+        <span class="c1">// 3. any business exception, rollback.</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">tx</span><span class="o">.</span><span class="na">rollback</span><span class="o">();</span>
+
+            <span class="c1">// 3.1 Successfully rolled back</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span><span class="o">(</span><span class="n">tx</span><span class="o">,</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">Code</span><span class="o">.</span><span class="na">RollbackDone</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">TransactionException</span> <span class="n">txe</span><span class="o">)</span> <span class="o">{</span>
+            <span class="c1">// 3.2 Failed to rollback</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span><span class="o">(</span><span class="n">tx</span><span class="o">,</span> <span class="n">txe</span><span class="o">,</span>
+                <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">Code</span><span class="o">.</span><span class="na">RollbackFailure</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="c1">// 4. everything is fine, commit.</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">tx</span><span class="o">.</span><span class="na">commit</span><span class="o">();</span>
+
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">TransactionException</span> <span class="n">txe</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// 4.1 Failed to commit</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">ExecutionException</span><span class="o">(</span><span class="n">tx</span><span class="o">,</span> <span class="n">txe</span><span class="o">,</span>
+            <span class="n">TransactionalExecutor</span><span class="o">.</span><span class="na">Code</span><span class="o">.</span><span class="na">CommitFailure</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="n">rs</span><span class="o">;</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>我们先走读一下 TM <strong>开启全局事务</strong> 的代码，TM 端这边我们已经在第一章就讲了，这里不走读了，具体 TC 端做了哪些事情，我们还需要阅读一下的。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@Override</span>
+<span class="kd">public</span> <span class="n">String</span> <span class="nf">begin</span><span class="o">(</span><span class="n">String</span> <span class="n">applicationId</span><span class="o">,</span> <span class="n">String</span> <span class="n">transactionServiceGroup</span><span class="o">,</span> <span class="n">String</span> <span class="n">name</span><span class="o">,</span> <span class="kt">int</span> <span class="n">timeout</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+    <span class="c1">// 创建一个 GlobalSession，构造方法里面自动生成一个 transactionId</span>
+    <span class="n">GlobalSession</span> <span class="n">session</span> <span class="o">=</span> <span class="n">GlobalSession</span><span class="o">.</span><span class="na">createGlobalSession</span><span class="o">(</span>
+        <span class="n">applicationId</span><span class="o">,</span> <span class="n">transactionServiceGroup</span><span class="o">,</span> <span class="n">name</span><span class="o">,</span> <span class="n">timeout</span><span class="o">);</span>
+    <span class="c1">// 放入 SessionLifecycleListener，如果有指定文件路径，就采用文件存储 session，默认是不持久化的。</span>
+    <span class="n">session</span><span class="o">.</span><span class="na">addSessionLifecycleListener</span><span class="o">(</span><span class="n">SessionHolder</span><span class="o">.</span><span class="na">getRootSessionManager</span><span class="o">());</span>
+    <span class="c1">// 见下方代码，1.修改状态，2.记录开启时间，3.激活状态，4.session 周期监听器触发开始逻辑</span>
+    <span class="n">session</span><span class="o">.</span><span class="na">begin</span><span class="o">();</span>
+    <span class="c1">// 返回 ip:port:transactionId</span>
+    <span class="k">return</span> <span class="n">XID</span><span class="o">.</span><span class="na">generateXID</span><span class="o">(</span><span class="n">session</span><span class="o">.</span><span class="na">getTransactionId</span><span class="o">());</span>
+<span class="o">}</span>
+
+<span class="nd">@Override</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">begin</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+    <span class="k">this</span><span class="o">.</span><span class="na">status</span> <span class="o">=</span> <span class="n">GlobalStatus</span><span class="o">.</span><span class="na">Begin</span><span class="o">;</span>
+    <span class="k">this</span><span class="o">.</span><span class="na">beginTime</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">();</span>
+    <span class="k">this</span><span class="o">.</span><span class="na">active</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="k">for</span> <span class="o">(</span><span class="n">SessionLifecycleListener</span> <span class="n">lifecycleListener</span> <span class="o">:</span> <span class="n">lifecycleListeners</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// 触发下方代码</span>
+        <span class="n">lifecycleListener</span><span class="o">.</span><span class="na">onBegin</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="nd">@Override</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">addGlobalSession</span><span class="o">(</span><span class="n">GlobalSession</span> <span class="n">session</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">LOGGER</span><span class="o">.</span><span class="na">isDebugEnabled</span><span class="o">())</span> <span class="o">{</span>
+        <span class="n">LOGGER</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">"MANAGER["</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s">"] SESSION["</span> <span class="o">+</span> <span class="n">session</span> <span class="o">+</span> <span class="s">"] "</span> <span class="o">+</span> <span class="n">LogOperation</span><span class="o">.</span><span class="na">GLOBAL_ADD</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="c1">// 持久化 session</span>
+    <span class="n">transactionStoreManager</span><span class="o">.</span><span class="na">writeSession</span><span class="o">(</span><span class="n">LogOperation</span><span class="o">.</span><span class="na">GLOBAL_ADD</span><span class="o">,</span> <span class="n">session</span><span class="o">);</span>
+    <span class="c1">// 放入内存中</span>
+    <span class="n">sessionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">session</span><span class="o">.</span><span class="na">getTransactionId</span><span class="o">(),</span> <span class="n">session</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>好了，我们大概就知道了，TC 端这边负责管理着整个全局事务的 <code class="highlighter-rouge">Session</code> 状态和生命周期。下面我们直接看 TM 发起 <code class="highlighter-rouge">commit</code> 的代码逻辑吧。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@Override</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">commit</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+    <span class="c1">// 检查一下参数</span>
+    <span class="n">check</span><span class="o">();</span>
+    <span class="c1">// 解绑 xid</span>
+    <span class="n">RootContext</span><span class="o">.</span><span class="na">unbind</span><span class="o">();</span>
+    <span class="c1">// 如果是参与者，不提交</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">role</span> <span class="o">==</span> <span class="n">GlobalTransactionRole</span><span class="o">.</span><span class="na">Participant</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// Participant has no responsibility of committing</span>
+        <span class="k">return</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="c1">// 提交全局事务</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">transactionManager</span><span class="o">.</span><span class="na">commit</span><span class="o">(</span><span class="n">xid</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>我们可以发现，TM 这边其实提交全局事务非常简单，我们看一下 TC 端那边。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@Override</span>
+<span class="kd">public</span> <span class="n">GlobalStatus</span> <span class="nf">commit</span><span class="o">(</span><span class="n">String</span> <span class="n">xid</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+    <span class="c1">// 找出全局事务，也就是从那个 sessionMap 中找出 GlobalSession</span>
+    <span class="n">GlobalSession</span> <span class="n">globalSession</span> <span class="o">=</span> <span class="n">SessionHolder</span><span class="o">.</span><span class="na">findGlobalSession</span><span class="o">(</span><span class="n">XID</span><span class="o">.</span><span class="na">getTransactionId</span><span class="o">(</span><span class="n">xid</span><span class="o">));</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">globalSession</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">GlobalStatus</span><span class="o">.</span><span class="na">Finished</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="n">GlobalStatus</span> <span class="n">status</span> <span class="o">=</span> <span class="n">globalSession</span><span class="o">.</span><span class="na">getStatus</span><span class="o">();</span>
+
+    <span class="c1">// 1. close : active 设置为 false（分支事务注册会抛异常，具体查看 assertGlobalSession 方法）</span>
+    <span class="c1">// 2. clean : 释放分支事务的锁</span>
+    <span class="n">globalSession</span><span class="o">.</span><span class="na">closeAndClean</span><span class="o">();</span> <span class="c1">// Highlight: Firstly, close the session, then no more branch can be registered.</span>
+
+    <span class="k">if</span> <span class="o">(</span><span class="n">status</span> <span class="o">==</span> <span class="n">GlobalStatus</span><span class="o">.</span><span class="na">Begin</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// 当其中有个分支事务类型是 MT 时，就是false</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">globalSession</span><span class="o">.</span><span class="na">canBeCommittedAsync</span><span class="o">())</span> <span class="o">{</span>
+            <span class="n">asyncCommit</span><span class="o">(</span><span class="n">globalSession</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+            <span class="n">doGlobalCommit</span><span class="o">(</span><span class="n">globalSession</span><span class="o">,</span> <span class="kc">false</span><span class="o">);</span>
+        <span class="o">}</span>
+
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="n">globalSession</span><span class="o">.</span><span class="na">getStatus</span><span class="o">();</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>由于现在 fescar 还是0.1.2版本，还不支持 MT 模式，我们先看 AT 模式的 <code class="highlighter-rouge">asyncCommit()</code> 方法。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">private</span> <span class="kt">void</span> <span class="nf">asyncCommit</span><span class="o">(</span><span class="n">GlobalSession</span> <span class="n">globalSession</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+    <span class="c1">// 全局事务加入异步提交 session 管理器</span>
+    <span class="n">globalSession</span><span class="o">.</span><span class="na">addSessionLifecycleListener</span><span class="o">(</span><span class="n">SessionHolder</span><span class="o">.</span><span class="na">getAsyncCommittingSessionManager</span><span class="o">());</span>
+    <span class="c1">// 异步提交 session 管理器添加这个全局 session</span>
+    <span class="n">SessionHolder</span><span class="o">.</span><span class="na">getAsyncCommittingSessionManager</span><span class="o">().</span><span class="na">addGlobalSession</span><span class="o">(</span><span class="n">globalSession</span><span class="o">);</span>
+<span class="o">}</span>
+
+<span class="nd">@Override</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">addGlobalSession</span><span class="o">(</span><span class="n">GlobalSession</span> <span class="n">session</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">LOGGER</span><span class="o">.</span><span class="na">isDebugEnabled</span><span class="o">())</span> <span class="o">{</span>
+        <span class="n">LOGGER</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">"MANAGER["</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s">"] SESSION["</span> <span class="o">+</span> <span class="n">session</span> <span class="o">+</span> <span class="s">"] "</span> <span class="o">+</span> <span class="n">LogOperation</span><span class="o">.</span><span class="na">GLOBAL_ADD</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="n">transactionStoreManager</span><span class="o">.</span><span class="na">writeSession</span><span class="o">(</span><span class="n">LogOperation</span><span class="o">.</span><span class="na">GLOBAL_ADD</span><span class="o">,</span> <span class="n">session</span><span class="o">);</span>
+    <span class="c1">// 放入异步提交 session 管理器的 map 中。</span>
+    <span class="n">sessionMap</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">session</span><span class="o">.</span><span class="na">getTransactionId</span><span class="o">(),</span> <span class="n">session</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>现在我们就需要找到异步处理这个 AsyncCommittingSessionManager 的代码了。我们发现在 <code class="highlighter-rouge">DefaultCoordinator</code> 类中有个 <code class="highlighter-rouge">init()</code> 方法，启动了某个线程池定期处理。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kt">void</span> <span class="nf">init</span><span class="o">()</span> <span class="o">{</span>
+    <span class="n">retryRollbacking</span><span class="o">.</span><span class="na">scheduleAtFixedRate</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="n">handleRetryRollbacking</span><span class="o">();</span>
+            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">LOGGER</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">"Exception retry rollbacking ... "</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
+            <span class="o">}</span>
+
+        <span class="o">}</span>
+    <span class="o">},</span> <span class="mi">0</span><span class="o">,</span> <span class="mi">5</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">);</span>
+
+    <span class="n">retryCommitting</span><span class="o">.</span><span class="na">scheduleAtFixedRate</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="n">handleRetryCommitting</span><span class="o">();</span>
+            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">LOGGER</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">"Exception retry committing ... "</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
+            <span class="o">}</span>
+
+        <span class="o">}</span>
+    <span class="o">},</span> <span class="mi">0</span><span class="o">,</span> <span class="mi">5</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">);</span>
+
+    <span class="n">asyncCommitting</span><span class="o">.</span><span class="na">scheduleAtFixedRate</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="n">handleAsyncCommitting</span><span class="o">();</span>
+            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">LOGGER</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">"Exception async committing ... "</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
+            <span class="o">}</span>
+
+        <span class="o">}</span>
+    <span class="o">},</span> <span class="mi">0</span><span class="o">,</span> <span class="mi">10</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">);</span>
+
+    <span class="n">timeoutCheck</span><span class="o">.</span><span class="na">scheduleAtFixedRate</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="n">timeoutCheck</span><span class="o">();</span>
+            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">LOGGER</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">"Exception timeout checking ... "</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
+            <span class="o">}</span>
+
+        <span class="o">}</span>
+    <span class="o">},</span> <span class="mi">0</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">);</span>
+
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>我们往下看 <code class="highlighter-rouge">handleAsyncCommitting()</code> 方法</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">private</span> <span class="kt">void</span> <span class="nf">handleAsyncCommitting</span><span class="o">()</span> <span class="o">{</span>
+    <span class="n">Collection</span><span class="o">&lt;</span><span class="n">GlobalSession</span><span class="o">&gt;</span> <span class="n">asyncCommittingSessions</span> <span class="o">=</span> <span class="n">SessionHolder</span><span class="o">.</span><span class="na">getAsyncCommittingSessionManager</span><span class="o">()</span>
+        <span class="o">.</span><span class="na">allSessions</span><span class="o">();</span>
+    <span class="k">for</span> <span class="o">(</span><span class="n">GlobalSession</span> <span class="n">asyncCommittingSession</span> <span class="o">:</span> <span class="n">asyncCommittingSessions</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="c1">// 交付给 core 去做全局事务提交，且不允许重试呢</span>
+            <span class="n">core</span><span class="o">.</span><span class="na">doGlobalCommit</span><span class="o">(</span><span class="n">asyncCommittingSession</span><span class="o">,</span> <span class="kc">true</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">TransactionException</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">LOGGER</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">"Failed to async committing [{}] {} {}"</span><span class="o">,</span>
+                <span class="n">asyncCommittingSession</span><span class="o">.</span><span class="na">getTransactionId</span><span class="o">(),</span> <span class="n">ex</span><span class="o">.</span><span class="na">getCode</span><span class="o">(),</span> <span class="n">ex</span><span class="o">.</span><span class="na">getMessage</span><span class="o">());</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>接下来，不用我说，也知道肯定看 <code class="highlighter-rouge">DefaultCore</code> 的 <code class="highlighter-rouge">doGlobalCommit()</code> 方法</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kt">void</span> <span class="nf">doGlobalCommit</span><span class="o">(</span><span class="n">GlobalSession</span> <span class="n">globalSession</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">retrying</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+    <span class="k">for</span> <span class="o">(</span><span class="n">BranchSession</span> <span class="n">branchSession</span> <span class="o">:</span> <span class="n">globalSession</span><span class="o">.</span><span class="na">getSortedBranches</span><span class="o">())</span> <span class="o">{</span>
+        <span class="n">BranchStatus</span> <span class="n">currentStatus</span> <span class="o">=</span> <span class="n">branchSession</span><span class="o">.</span><span class="na">getStatus</span><span class="o">();</span>
+        <span class="c1">// thinking: 为什么一阶段失败是 continue，而不是 break</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">currentStatus</span> <span class="o">==</span> <span class="n">BranchStatus</span><span class="o">.</span><span class="na">PhaseOne_Failed</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">continue</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="c1">// 通知 RM 分支事务提交，返回分支事务状态</span>
+            <span class="n">BranchStatus</span> <span class="n">branchStatus</span> <span class="o">=</span> <span class="n">resourceManagerInbound</span><span class="o">.</span><span class="na">branchCommit</span><span class="o">(</span><span class="n">XID</span><span class="o">.</span><span class="na">generateXID</span><span class="o">(</span><span class="n">branchSession</span><span class="o">.</span><span class="na">getTransactionId</span><span class="o">()),</span> <span class="n">branchSession</span><span class="o">.</span><span class="na">getBranchId</span><span class="o">(),</span> <span class="n">branchSession</span><span class="o">.</span><span class="na">getResourceId</span><span class="o">(),</span> <span class="n">branchSession</span><span class="o">.</span><span class="na">getApplicationData</span><span class="o">());</span>
+
+            <span class="k">switch</span> <span class="o">(</span><span class="n">branchStatus</span><span class="o">)</span> <span class="o">{</span>
+                <span class="c1">// 提交成功的话，就删除分支 session</span>
+                <span class="k">case</span> <span class="nl">PhaseTwo_Committed:</span>
+                    <span class="n">globalSession</span><span class="o">.</span><span class="na">removeBranch</span><span class="o">(</span><span class="n">branchSession</span><span class="o">);</span>
+                    <span class="k">continue</span><span class="o">;</span>
+                <span class="c1">// TODO: 暂时可以忽略</span>
+                <span class="k">case</span> <span class="nl">PhaseTwo_CommitFailed_Unretryable:</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">globalSession</span><span class="o">.</span><span class="na">canBeCommittedAsync</span><span class="o">())</span> <span class="o">{</span>
+                        <span class="n">LOGGER</span><span class="o">.</span><span class="na">error</span><span class="o">(</span><span class="s">"By [{}], failed to commit branch {}"</span><span class="o">,</span> <span class="n">branchStatus</span><span class="o">,</span> <span class="n">branchSession</span><span class="o">);</span>
+                        <span class="k">continue</span><span class="o">;</span>
+                    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                        <span class="n">globalSession</span><span class="o">.</span><span class="na">changeStatus</span><span class="o">(</span><span class="n">GlobalStatus</span><span class="o">.</span><span class="na">CommitFailed</span><span class="o">);</span>
+                        <span class="n">globalSession</span><span class="o">.</span><span class="na">end</span><span class="o">();</span>
+                        <span class="n">LOGGER</span><span class="o">.</span><span class="na">error</span><span class="o">(</span><span class="s">"Finally, failed to commit global[{}] since branch[{}] commit failed"</span><span class="o">,</span>
+                            <span class="n">globalSession</span><span class="o">.</span><span class="na">getTransactionId</span><span class="o">(),</span> <span class="n">branchSession</span><span class="o">.</span><span class="na">getBranchId</span><span class="o">());</span>
+                        <span class="k">return</span><span class="o">;</span>
+                    <span class="o">}</span>
+                <span class="k">default</span><span class="o">:</span>
+                    <span class="k">if</span> <span class="o">(!</span><span class="n">retrying</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">queueToRetryCommit</span><span class="o">(</span><span class="n">globalSession</span><span class="o">);</span>
+                        <span class="k">return</span><span class="o">;</span>
+                    <span class="o">}</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">globalSession</span><span class="o">.</span><span class="na">canBeCommittedAsync</span><span class="o">())</span> <span class="o">{</span>
+                        <span class="n">LOGGER</span><span class="o">.</span><span class="na">error</span><span class="o">(</span><span class="s">"By [{}], failed to commit branch {}"</span><span class="o">,</span> <span class="n">branchStatus</span><span class="o">,</span> <span class="n">branchSession</span><span class="o">);</span>
+                        <span class="k">continue</span><span class="o">;</span>
+                    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                        <span class="n">LOGGER</span><span class="o">.</span><span class="na">error</span><span class="o">(</span>
+                            <span class="s">"Failed to commit global[{}] since branch[{}] commit failed, will retry later."</span><span class="o">,</span>
+                            <span class="n">globalSession</span><span class="o">.</span><span class="na">getTransactionId</span><span class="o">(),</span> <span class="n">branchSession</span><span class="o">.</span><span class="na">getBranchId</span><span class="o">());</span>
+                        <span class="k">return</span><span class="o">;</span>
+                    <span class="o">}</span>
+
+            <span class="o">}</span>
+
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">LOGGER</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">"Exception committing branch {}"</span><span class="o">,</span> <span class="n">branchSession</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(!</span><span class="n">retrying</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">queueToRetryCommit</span><span class="o">(</span><span class="n">globalSession</span><span class="o">);</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">ex</span> <span class="k">instanceof</span> <span class="n">TransactionException</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="k">throw</span> <span class="o">(</span><span class="n">TransactionException</span><span class="o">)</span> <span class="n">ex</span><span class="o">;</span>
+                <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                    <span class="k">throw</span> <span class="k">new</span> <span class="nf">TransactionException</span><span class="o">(</span><span class="n">ex</span><span class="o">);</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">globalSession</span><span class="o">.</span><span class="na">hasBranch</span><span class="o">())</span> <span class="o">{</span>
+        <span class="n">LOGGER</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">"Global[{}] committing is NOT done."</span><span class="o">,</span> <span class="n">globalSession</span><span class="o">.</span><span class="na">getTransactionId</span><span class="o">());</span>
+        <span class="k">return</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="n">globalSession</span><span class="o">.</span><span class="na">changeStatus</span><span class="o">(</span><span class="n">GlobalStatus</span><span class="o">.</span><span class="na">Committed</span><span class="o">);</span>
+    <span class="c1">// 触发 SessionLifecycleListener, 调用 onEnd() 方法，sessionMap 移除其 globalSession</span>
+    <span class="n">globalSession</span><span class="o">.</span><span class="na">end</span><span class="o">();</span>
+    <span class="n">LOGGER</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">"Global[{}] committing is successfully done."</span><span class="o">,</span> <span class="n">globalSession</span><span class="o">.</span><span class="na">getTransactionId</span><span class="o">());</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>RM 处理分支事务提交的代码，我们整理代码发现，RM 只是异步删除 undoLog 而已。<code class="highlighter-rouge">AsyncWorker</code> 的 <code class="highlighter-rouge">branchCommit()</code> 方法。且我们看到返回状态一定是 <code class="highlighter-rouge">PhaseTwo_Committed</code>。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@Override</span>
+<span class="kd">public</span> <span class="n">BranchStatus</span> <span class="nf">branchCommit</span><span class="o">(</span><span class="n">String</span> <span class="n">xid</span><span class="o">,</span> <span class="kt">long</span> <span class="n">branchId</span><span class="o">,</span> <span class="n">String</span> <span class="n">resourceId</span><span class="o">,</span> <span class="n">String</span> <span class="n">applicationData</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+    <span class="c1">// 将分支事务 id 加入其 BUFFER 中</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">ASYNC_COMMIT_BUFFER</span><span class="o">.</span><span class="na">size</span><span class="o">()</span> <span class="o">&lt;</span> <span class="n">ASYNC_COMMIT_BUFFER_LIMIT</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">ASYNC_COMMIT_BUFFER</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">Phase2Context</span><span class="o">(</span><span class="n">xid</span><span class="o">,</span> <span class="n">branchId</span><span class="o">,</span> <span class="n">resourceId</span><span class="o">,</span> <span class="n">applicationData</span><span class="o">));</span>
+    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+        <span class="n">LOGGER</span><span class="o">.</span><span class="na">warn</span><span class="o">(</span><span class="s">"Async commit buffer is FULL. Rejected branch ["</span> <span class="o">+</span> <span class="n">branchId</span> <span class="o">+</span> <span class="s">"/"</span> <span class="o">+</span> <span class="n">xid</span> <span class="o">+</span> <span class="s">"] will be handled by housekeeping later."</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="n">BranchStatus</span><span class="o">.</span><span class="na">PhaseTwo_Committed</span><span class="o">;</span>
+<span class="o">}</span>
+
+<span class="c1">// 启动其线程开始做一些分支事务提交</span>
+<span class="kd">public</span> <span class="kd">synchronized</span> <span class="kt">void</span> <span class="nf">init</span><span class="o">()</span> <span class="o">{</span>
+    <span class="n">LOGGER</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">"Async Commit Buffer Limit: "</span> <span class="o">+</span> <span class="n">ASYNC_COMMIT_BUFFER_LIMIT</span><span class="o">);</span>
+    <span class="n">timerExecutor</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ScheduledThreadPoolExecutor</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span>
+        <span class="k">new</span> <span class="nf">NamedThreadFactory</span><span class="o">(</span><span class="s">"AsyncWorker"</span><span class="o">,</span> <span class="mi">1</span><span class="o">,</span> <span class="kc">true</span><span class="o">));</span>
+    <span class="n">timerExecutor</span><span class="o">.</span><span class="na">scheduleAtFixedRate</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="c1">// 做一些分支事务提交</span>
+                <span class="n">doBranchCommits</span><span class="o">();</span>
+            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">LOGGER</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">"Failed at async committing ... "</span> <span class="o">+</span> <span class="n">e</span><span class="o">.</span><span class="na">getMessage</span><span class="o">());</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">},</span> <span class="mi">10</span><span class="o">,</span> <span class="mi">1000</span> <span class="o">*</span> <span class="mi">1</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">);</span>
+<span class="o">}</span>
+
+<span class="kd">private</span> <span class="kt">void</span> <span class="nf">doBranchCommits</span><span class="o">()</span> <span class="o">{</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">ASYNC_COMMIT_BUFFER</span><span class="o">.</span><span class="na">size</span><span class="o">()</span> <span class="o">==</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">Phase2Context</span><span class="o">&gt;&gt;</span> <span class="n">mappedContexts</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;&gt;();</span>
+    <span class="n">Iterator</span><span class="o">&lt;</span><span class="n">Phase2Context</span><span class="o">&gt;</span> <span class="n">iterator</span> <span class="o">=</span> <span class="n">ASYNC_COMMIT_BUFFER</span><span class="o">.</span><span class="na">iterator</span><span class="o">();</span>
+    <span class="k">while</span> <span class="o">(</span><span class="n">iterator</span><span class="o">.</span><span class="na">hasNext</span><span class="o">())</span> <span class="o">{</span>
+        <span class="n">Phase2Context</span> <span class="n">commitContext</span> <span class="o">=</span> <span class="n">iterator</span><span class="o">.</span><span class="na">next</span><span class="o">();</span>
+        <span class="n">List</span><span class="o">&lt;</span><span class="n">Phase2Context</span><span class="o">&gt;</span> <span class="n">contextsGroupedByResourceId</span> <span class="o">=</span> <span class="n">mappedContexts</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">commitContext</span><span class="o">.</span><span class="na">resourceId</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">contextsGroupedByResourceId</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">contextsGroupedByResourceId</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;();</span>
+            <span class="n">mappedContexts</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">commitContext</span><span class="o">.</span><span class="na">resourceId</span><span class="o">,</span> <span class="n">contextsGroupedByResourceId</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="n">contextsGroupedByResourceId</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">commitContext</span><span class="o">);</span>
+        <span class="n">iterator</span><span class="o">.</span><span class="na">remove</span><span class="o">();</span>
+    <span class="o">}</span>
+
+    <span class="k">for</span> <span class="o">(</span><span class="n">String</span> <span class="n">resourceId</span> <span class="o">:</span> <span class="n">mappedContexts</span><span class="o">.</span><span class="na">keySet</span><span class="o">())</span> <span class="o">{</span>
+        <span class="n">Connection</span> <span class="n">conn</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="n">DataSourceProxy</span> <span class="n">dataSourceProxy</span> <span class="o">=</span> <span class="n">DataSourceManager</span><span class="o">.</span><span class="na">get</span><span class="o">().</span><span class="na">get</span><span class="o">(</span><span class="n">resourceId</span><span class="o">);</span>
+                <span class="n">conn</span> <span class="o">=</span> <span class="n">dataSourceProxy</span><span class="o">.</span><span class="na">getPlainConnection</span><span class="o">();</span>
+            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">SQLException</span> <span class="n">sqle</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">LOGGER</span><span class="o">.</span><span class="na">warn</span><span class="o">(</span><span class="s">"Failed to get connection for async committing on "</span> <span class="o">+</span> <span class="n">resourceId</span><span class="o">,</span> <span class="n">sqle</span><span class="o">);</span>
+                <span class="k">continue</span><span class="o">;</span>
+            <span class="o">}</span>
+
+            <span class="n">List</span><span class="o">&lt;</span><span class="n">Phase2Context</span><span class="o">&gt;</span> <span class="n">contextsGroupedByResourceId</span> <span class="o">=</span> <span class="n">mappedContexts</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">resourceId</span><span class="o">);</span>
+            <span class="k">for</span> <span class="o">(</span><span class="n">Phase2Context</span> <span class="n">commitContext</span> <span class="o">:</span> <span class="n">contextsGroupedByResourceId</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">try</span> <span class="o">{</span>
+                    <span class="c1">// 删除 undoLog</span>
+                    <span class="n">UndoLogManager</span><span class="o">.</span><span class="na">deleteUndoLog</span><span class="o">(</span><span class="n">commitContext</span><span class="o">.</span><span class="na">xid</span><span class="o">,</span> <span class="n">commitContext</span><span class="o">.</span><span class="na">branchId</span><span class="o">,</span> <span class="n">conn</span><span class="o">);</span>
+                <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">LOGGER</span><span class="o">.</span><span class="na">warn</span><span class="o">(</span><span class="s">"Failed to delete undo log ["</span> <span class="o">+</span> <span class="n">commitContext</span><span class="o">.</span><span class="na">branchId</span> <span class="o">+</span> <span class="s">"/"</span> <span class="o">+</span> <span class="n">commitContext</span><span class="o">.</span><span class="na">xid</span> <span class="o">+</span> <span class="s">"]"</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">conn</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">try</span> <span class="o">{</span>
+                    <span class="n">conn</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+                <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">SQLException</span> <span class="n">closeEx</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="n">LOGGER</span><span class="o">.</span><span class="na">warn</span><span class="o">(</span><span class="s">"Failed to close JDBC resource while deleting undo_log "</span><span class="o">,</span> <span class="n">closeEx</span><span class="o">);</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+
+    <span class="o">}</span>
+
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>全局提交的过程，我们讲完了，我们下一章讲一下全局事务的回滚吧，内容也非常多。</p>
+
+<h3 id="后续补充">后续补充</h3>
+<ol>
+  <li>xid 的传递</li>
+  <li>undoLog 的实现</li>
+  <li>TC 锁的原理</li>
+  <li>隔离性</li>
+  <li>RM 和 TC 的 netty 封装</li>
+</ol>

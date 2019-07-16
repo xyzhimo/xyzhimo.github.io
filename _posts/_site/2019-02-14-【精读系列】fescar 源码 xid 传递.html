@@ -1,0 +1,186 @@
+<h3 id="精读目的">精读目的</h3>
+
+<p>如果之前有了解过 fescar，那么你应该对 xid 不会感到陌生。如果你不是很了解 fescar，也不清楚 xid 在其中的作用，我这里从 fescar 官方 wiki 中截了一张图来你来了解一下 xid 在其中的重要性。
+<br />
+<img src="https://zhimo-1252091368.cos.ap-chengdu.myqcloud.com/blog/20190215103948.png" alt="xid 在 fescar 的重要性" />
+<br />
+所以本篇文章的目的就为了让你对 xid 的生成，传递有一个</p>
+
+<h3 id="阅读内容">阅读内容</h3>
+
+<p>我们先看一下 xid 在 TM 端的代码，先从 <code class="highlighter-rouge">begin()</code> 方法开始。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@Override</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">begin</span><span class="o">(</span><span class="kt">int</span> <span class="n">timeout</span><span class="o">,</span> <span class="n">String</span> <span class="n">name</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+    <span class="o">...</span>
+    <span class="n">xid</span> <span class="o">=</span> <span class="n">transactionManager</span><span class="o">.</span><span class="na">begin</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="n">name</span><span class="o">,</span> <span class="n">timeout</span><span class="o">);</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">GlobalStatus</span><span class="o">.</span><span class="na">Begin</span><span class="o">;</span>
+    <span class="n">RootContext</span><span class="o">.</span><span class="na">bind</span><span class="o">(</span><span class="n">xid</span><span class="o">);</span>
+    <span class="o">...</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>TC端生成一个 xid，生成规则是 ip : port : transactionId，transactionId 的生成规则如下。TC 端生成 xid 后，返回给 TM 端。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">private</span> <span class="kd">static</span> <span class="n">AtomicLong</span> <span class="n">UUID</span> <span class="o">=</span> <span class="k">new</span> <span class="n">AtomicLong</span><span class="o">(</span><span class="mi">1000</span><span class="o">);</span>
+<span class="kd">private</span> <span class="kd">static</span> <span class="kt">int</span> <span class="n">serverNodeId</span> <span class="o">=</span> <span class="mi">1</span><span class="o">;</span>
+<span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">UUID_INTERNAL</span> <span class="o">=</span> <span class="mi">2000000000</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">static</span> <span class="kt">long</span> <span class="nf">generateUUID</span><span class="o">()</span> <span class="o">{</span>
+    <span class="kt">long</span> <span class="n">id</span> <span class="o">=</span> <span class="n">UUID</span><span class="o">.</span><span class="na">incrementAndGet</span><span class="o">();</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">id</span> <span class="o">&gt;</span> <span class="n">UUID_INTERNAL</span> <span class="o">*</span> <span class="n">serverNodeId</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">synchronized</span> <span class="o">(</span><span class="n">UUID</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">UUID</span><span class="o">.</span><span class="na">get</span><span class="o">()</span> <span class="o">&gt;=</span> <span class="n">id</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">id</span> <span class="o">-=</span> <span class="n">UUID_INTERNAL</span><span class="o">;</span>
+                <span class="n">UUID</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">id</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="n">id</span><span class="o">;</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>绑定到 ThreadLocal 中</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">private</span> <span class="kd">static</span> <span class="n">ContextCore</span> <span class="n">CONTEXT_HOLDER</span> <span class="o">=</span> <span class="n">ContextCoreLoader</span><span class="o">.</span><span class="na">load</span><span class="o">();</span>
+
+<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">bind</span><span class="o">(</span><span class="n">String</span> <span class="n">xid</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">LOGGER</span><span class="o">.</span><span class="na">isDebugEnabled</span><span class="o">())</span> <span class="o">{</span>
+        <span class="n">LOGGER</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">"bind "</span> <span class="o">+</span> <span class="n">xid</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="n">CONTEXT_HOLDER</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">KEY_XID</span><span class="o">,</span> <span class="n">xid</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ContextCoreLoader</span> <span class="o">{</span>
+
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">ContextCoreHolder</span> <span class="o">{</span>
+        <span class="kd">private</span> <span class="kd">static</span> <span class="n">ContextCore</span> <span class="n">INSTANCE</span><span class="o">;</span>
+
+        <span class="kd">static</span> <span class="o">{</span>
+            <span class="c1">// TODO:暂时不考虑这段代码，后续再回来研究</span>
+            <span class="n">ContextCore</span> <span class="n">contextCore</span> <span class="o">=</span> <span class="n">EnhancedServiceLoader</span><span class="o">.</span><span class="na">load</span><span class="o">(</span><span class="n">ContextCore</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">contextCore</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                <span class="c1">// ThreadLocal</span>
+                <span class="n">contextCore</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ThreadLocalContextCore</span><span class="o">();</span>
+            <span class="o">}</span>
+            <span class="n">INSTANCE</span> <span class="o">=</span> <span class="n">contextCore</span><span class="o">;</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+     * Load context core.
+     *
+     * @return the context core
+     */</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="n">ContextCore</span> <span class="nf">load</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">ContextCoreHolder</span><span class="o">.</span><span class="na">INSTANCE</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>接下来我们看 dubbo 自定义透传 xid 的 filter代码。不要慌，下面有拆分讲解。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@Activate</span><span class="o">(</span><span class="n">group</span> <span class="o">=</span> <span class="o">{</span> <span class="n">Constants</span><span class="o">.</span><span class="na">PROVIDER</span><span class="o">,</span> <span class="n">Constants</span><span class="o">.</span><span class="na">CONSUMER</span> <span class="o">},</span> <span class="n">order</span> <span class="o">=</span> <span class="mi">100</span><span class="o">)</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">TransactionPropagationFilter</span> <span class="kd">implements</span> <span class="n">Filter</span> <span class="o">{</span>
+
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">Logger</span> <span class="n">LOGGER</span> <span class="o">=</span> <span class="n">LoggerFactory</span><span class="o">.</span><span class="na">getLogger</span><span class="o">(</span><span class="n">TransactionPropagationFilter</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">Result</span> <span class="nf">invoke</span><span class="o">(</span><span class="n">Invoker</span><span class="o">&lt;?&gt;</span> <span class="n">invoker</span><span class="o">,</span> <span class="n">Invocation</span> <span class="n">invocation</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">RpcException</span> <span class="o">{</span>
+        <span class="n">String</span> <span class="n">xid</span> <span class="o">=</span> <span class="n">RootContext</span><span class="o">.</span><span class="na">getXID</span><span class="o">();</span>
+        <span class="n">String</span> <span class="n">rpcXid</span> <span class="o">=</span> <span class="n">RpcContext</span><span class="o">.</span><span class="na">getContext</span><span class="o">().</span><span class="na">getAttachment</span><span class="o">(</span><span class="n">RootContext</span><span class="o">.</span><span class="na">KEY_XID</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">LOGGER</span><span class="o">.</span><span class="na">isDebugEnabled</span><span class="o">())</span> <span class="o">{</span>
+            <span class="n">LOGGER</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">"xid in RootContext["</span> <span class="o">+</span> <span class="n">xid</span> <span class="o">+</span> <span class="s">"] xid in RpcContext["</span> <span class="o">+</span> <span class="n">rpcXid</span> <span class="o">+</span> <span class="s">"]"</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="kt">boolean</span> <span class="n">bind</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">xid</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">RpcContext</span><span class="o">.</span><span class="na">getContext</span><span class="o">().</span><span class="na">setAttachment</span><span class="o">(</span><span class="n">RootContext</span><span class="o">.</span><span class="na">KEY_XID</span><span class="o">,</span> <span class="n">xid</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">rpcXid</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">RootContext</span><span class="o">.</span><span class="na">bind</span><span class="o">(</span><span class="n">rpcXid</span><span class="o">);</span>
+                <span class="n">bind</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">LOGGER</span><span class="o">.</span><span class="na">isDebugEnabled</span><span class="o">())</span> <span class="o">{</span>
+                    <span class="n">LOGGER</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">"bind["</span> <span class="o">+</span> <span class="n">rpcXid</span> <span class="o">+</span> <span class="s">"] to RootContext"</span><span class="o">);</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">invoker</span><span class="o">.</span><span class="na">invoke</span><span class="o">(</span><span class="n">invocation</span><span class="o">);</span>
+
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">bind</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">String</span> <span class="n">unbindXid</span> <span class="o">=</span> <span class="n">RootContext</span><span class="o">.</span><span class="na">unbind</span><span class="o">();</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">LOGGER</span><span class="o">.</span><span class="na">isDebugEnabled</span><span class="o">())</span> <span class="o">{</span>
+                    <span class="n">LOGGER</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">"unbind["</span> <span class="o">+</span> <span class="n">unbindXid</span> <span class="o">+</span> <span class="s">"] from RootContext"</span><span class="o">);</span>
+                <span class="o">}</span>
+                <span class="k">if</span> <span class="o">(!</span><span class="n">rpcXid</span><span class="o">.</span><span class="na">equalsIgnoreCase</span><span class="o">(</span><span class="n">unbindXid</span><span class="o">))</span> <span class="o">{</span>
+                    <span class="n">LOGGER</span><span class="o">.</span><span class="na">warn</span><span class="o">(</span><span class="s">"xid in change during RPC from "</span> <span class="o">+</span> <span class="n">rpcXid</span> <span class="o">+</span> <span class="s">" to "</span> <span class="o">+</span> <span class="n">unbindXid</span><span class="o">);</span>
+                    <span class="k">if</span> <span class="o">(</span><span class="n">unbindXid</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="n">RootContext</span><span class="o">.</span><span class="na">bind</span><span class="o">(</span><span class="n">unbindXid</span><span class="o">);</span>
+                        <span class="n">LOGGER</span><span class="o">.</span><span class="na">warn</span><span class="o">(</span><span class="s">"bind ["</span> <span class="o">+</span> <span class="n">unbindXid</span> <span class="o">+</span> <span class="s">"] back to RootContext"</span><span class="o">);</span>
+                    <span class="o">}</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>上面是 dubbo 透传 xid 的自定义 filter 代码，我们看到第一行代码就是 <code class="highlighter-rouge">@Activate(group = { Constants.PROVIDER, Constants.CONSUMER }, order = 100)</code>。下面分别会对 provider 和 consumer 拆分讲解一下透传的原理。当然具体的 dubbo 源码我还没看，所以这里暂时不会涉及到 dubbo 源码。</p>
+
+<p>如果是 consumer，通常 TM 一定是 consumer，且一定有 xid。删减后重要的代码如下所示</p>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@Activate</span><span class="o">(</span><span class="n">group</span> <span class="o">=</span> <span class="o">{</span> <span class="n">Constants</span><span class="o">.</span><span class="na">CONSUMER</span><span class="o">},</span> <span class="n">order</span> <span class="o">=</span> <span class="mi">100</span><span class="o">)</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">TransactionPropagationFilter</span> <span class="kd">implements</span> <span class="n">Filter</span> <span class="o">{</span>
+
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">Logger</span> <span class="n">LOGGER</span> <span class="o">=</span> <span class="n">LoggerFactory</span><span class="o">.</span><span class="na">getLogger</span><span class="o">(</span><span class="n">TransactionPropagationFilter</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">Result</span> <span class="nf">invoke</span><span class="o">(</span><span class="n">Invoker</span><span class="o">&lt;?&gt;</span> <span class="n">invoker</span><span class="o">,</span> <span class="n">Invocation</span> <span class="n">invocation</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">RpcException</span> <span class="o">{</span>
+        <span class="c1">// 获取 TM 放入上下文的 xid</span>
+        <span class="n">String</span> <span class="n">xid</span> <span class="o">=</span> <span class="n">RootContext</span><span class="o">.</span><span class="na">getXID</span><span class="o">();</span>
+        <span class="c1">// 将其 xid 放入其 RpcContext 中</span>
+        <span class="n">RpcContext</span><span class="o">.</span><span class="na">getContext</span><span class="o">().</span><span class="na">setAttachment</span><span class="o">(</span><span class="n">RootContext</span><span class="o">.</span><span class="na">KEY_XID</span><span class="o">,</span> <span class="n">xid</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">invoker</span><span class="o">.</span><span class="na">invoke</span><span class="o">(</span><span class="n">invocation</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>如果是 provider，当有 consumer 调用其 provider 暴露的方法，会调用如下删减后重要的代码。</p>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@Activate</span><span class="o">(</span><span class="n">group</span> <span class="o">=</span> <span class="o">{</span> <span class="n">Constants</span><span class="o">.</span><span class="na">PROVIDER</span><span class="o">},</span> <span class="n">order</span> <span class="o">=</span> <span class="mi">100</span><span class="o">)</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">TransactionPropagationFilter</span> <span class="kd">implements</span> <span class="n">Filter</span> <span class="o">{</span>
+
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">Logger</span> <span class="n">LOGGER</span> <span class="o">=</span> <span class="n">LoggerFactory</span><span class="o">.</span><span class="na">getLogger</span><span class="o">(</span><span class="n">TransactionPropagationFilter</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">Result</span> <span class="nf">invoke</span><span class="o">(</span><span class="n">Invoker</span><span class="o">&lt;?&gt;</span> <span class="n">invoker</span><span class="o">,</span> <span class="n">Invocation</span> <span class="n">invocation</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">RpcException</span> <span class="o">{</span>
+        <span class="c1">// 通过 rpcContext 获取从 TM 带来的 xid</span>
+        <span class="n">String</span> <span class="n">rpcXid</span> <span class="o">=</span> <span class="n">RpcContext</span><span class="o">.</span><span class="na">getContext</span><span class="o">().</span><span class="na">getAttachment</span><span class="o">(</span><span class="n">RootContext</span><span class="o">.</span><span class="na">KEY_XID</span><span class="o">);</span>
+        <span class="c1">// 绑定到本地 jvm 内存中</span>
+        <span class="n">RootContext</span><span class="o">.</span><span class="na">bind</span><span class="o">(</span><span class="n">rpcXid</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">invoker</span><span class="o">.</span><span class="na">invoke</span><span class="o">(</span><span class="n">invocation</span><span class="o">);</span>
+
+        <span class="c1">// 我这里把 try finally 删除了，这段代码会被执行</span>
+        <span class="c1">// 解绑 xid，如果解绑的 xid 和 rpcContext 带来的 xid 不一致，再次绑定解绑的 xid</span>
+        <span class="n">String</span> <span class="n">unbindXid</span> <span class="o">=</span> <span class="n">RootContext</span><span class="o">.</span><span class="na">unbind</span><span class="o">();</span>
+        <span class="k">if</span> <span class="o">(!</span><span class="n">rpcXid</span><span class="o">.</span><span class="na">equalsIgnoreCase</span><span class="o">(</span><span class="n">unbindXid</span><span class="o">))</span> <span class="o">{</span>
+            <span class="n">LOGGER</span><span class="o">.</span><span class="na">warn</span><span class="o">(</span><span class="s">"xid in change during RPC from "</span> <span class="o">+</span> <span class="n">rpcXid</span> <span class="o">+</span> <span class="s">" to "</span> <span class="o">+</span> <span class="n">unbindXid</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">unbindXid</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">RootContext</span><span class="o">.</span><span class="na">bind</span><span class="o">(</span><span class="n">unbindXid</span><span class="o">);</span>
+                <span class="n">LOGGER</span><span class="o">.</span><span class="na">warn</span><span class="o">(</span><span class="s">"bind ["</span> <span class="o">+</span> <span class="n">unbindXid</span> <span class="o">+</span> <span class="s">"] back to RootContext"</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>总结一下。其实就是 TM 向 TC 发起全局事务开启，TC 给 TM 返回一个 xid，TM 将其 xid 绑定到 ThreadLocal 上，并通过 dubbo 自定义 filter通过消费服务的方式透传给服务方。</p>
+
+<h3 id="后续补充">后续补充</h3>
+<ol>
+  <li>undoLog 的实现</li>
+  <li>TC 锁的原理</li>
+  <li>隔离性</li>
+  <li>RM 和 TC 的 netty 封装</li>
+</ol>

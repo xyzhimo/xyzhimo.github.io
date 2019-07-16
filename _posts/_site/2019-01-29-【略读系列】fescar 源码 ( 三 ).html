@@ -1,0 +1,207 @@
+<h3 id="参考文献">参考文献</h3>
+
+<ul>
+  <li><a href="https://github.com/alibaba/fescar/wiki/%E6%A6%82%E8%A7%88">fescar概览</a></li>
+</ul>
+
+<h3 id="代码走读">代码走读</h3>
+
+<p>上一章我们把 RM 的一些业务逻辑走完了，但是我们还没开始走读 RM 和 TC 的一些通信，比如分支事务注册，以及分支事务状态上报等，今天我们就来看一下这些代码逻辑。</p>
+
+<p>上章我们讲到 <code class="highlighter-rouge">connectionProxy.commit()</code> 的方法，我们再次回顾一下 <code class="highlighter-rouge">commit</code> 方法。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@Override</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">commit</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">SQLException</span> <span class="o">{</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">context</span><span class="o">.</span><span class="na">inGlobalTransaction</span><span class="o">())</span> <span class="o">{</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="c1">// 注册分支事务</span>
+            <span class="n">register</span><span class="o">();</span>
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">TransactionException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">recognizeLockKeyConflictException</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+        <span class="o">}</span>
+
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="c1">// 冲刷 undoLog</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">context</span><span class="o">.</span><span class="na">hasUndoLog</span><span class="o">())</span> <span class="o">{</span>
+                <span class="n">UndoLogManager</span><span class="o">.</span><span class="na">flushUndoLogs</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="c1">// 分支事务提交</span>
+            <span class="n">targetConnection</span><span class="o">.</span><span class="na">commit</span><span class="o">();</span>
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">report</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">ex</span> <span class="k">instanceof</span> <span class="n">SQLException</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">throw</span> <span class="o">(</span><span class="n">SQLException</span><span class="o">)</span> <span class="n">ex</span><span class="o">;</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="nf">SQLException</span><span class="o">(</span><span class="n">ex</span><span class="o">);</span>
+            <span class="o">}</span>
+
+        <span class="o">}</span>
+        <span class="c1">// 上报分支状态</span>
+        <span class="n">report</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+        <span class="n">context</span><span class="o">.</span><span class="na">reset</span><span class="o">();</span>
+
+    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+        <span class="n">targetConnection</span><span class="o">.</span><span class="na">commit</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>我们发现 <code class="highlighter-rouge">commit()</code> 有两个方法需要 RM 和 TC 通信，一个是 <code class="highlighter-rouge">register()</code> 方法，一个是 <code class="highlighter-rouge">report()</code> 方法。我们先看一下 <code class="highlighter-rouge">register()</code> 方法。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">private</span> <span class="kt">void</span> <span class="nf">register</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+    <span class="n">Long</span> <span class="n">branchId</span> <span class="o">=</span> <span class="n">DataSourceManager</span><span class="o">.</span><span class="na">get</span><span class="o">().</span><span class="na">branchRegister</span><span class="o">(</span><span class="n">BranchType</span><span class="o">.</span><span class="na">AT</span><span class="o">,</span><span class="n">getDataSourceProxy</span><span class="o">().</span><span class="na">getResourceId</span><span class="o">(),</span><span class="kc">null</span><span class="o">,</span><span class="n">context</span><span class="o">.</span><span class="na">getXid</span><span class="o">(),</span>
+    <span class="c1">// 创建锁，锁的格式为 tb_1:1,2,3;tb_2:10,11,12这种</span>
+    <span class="n">context</span><span class="o">.</span><span class="na">buildLockKeys</span><span class="o">());</span>
+    <span class="n">context</span><span class="o">.</span><span class="na">setBranchId</span><span class="o">(</span><span class="n">branchId</span><span class="o">);</span>
+<span class="o">}</span>
+
+<span class="nd">@Override</span>
+<span class="kd">public</span> <span class="n">Long</span> <span class="nf">branchRegister</span><span class="o">(</span><span class="n">BranchType</span> <span class="n">branchType</span><span class="o">,</span> <span class="n">String</span> <span class="n">resourceId</span><span class="o">,</span> <span class="n">String</span> <span class="n">clientId</span><span class="o">,</span> <span class="n">String</span> <span class="n">xid</span><span class="o">,</span> <span class="n">String</span> <span class="n">lockKeys</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">BranchRegisterRequest</span> <span class="n">request</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BranchRegisterRequest</span><span class="o">();</span>
+        <span class="n">request</span><span class="o">.</span><span class="na">setTransactionId</span><span class="o">(</span><span class="n">XID</span><span class="o">.</span><span class="na">getTransactionId</span><span class="o">(</span><span class="n">xid</span><span class="o">));</span>
+        <span class="n">request</span><span class="o">.</span><span class="na">setLockKey</span><span class="o">(</span><span class="n">lockKeys</span><span class="o">);</span>
+        <span class="n">request</span><span class="o">.</span><span class="na">setResourceId</span><span class="o">(</span><span class="n">resourceId</span><span class="o">);</span>
+        <span class="n">request</span><span class="o">.</span><span class="na">setBranchType</span><span class="o">(</span><span class="n">branchType</span><span class="o">);</span>
+
+        <span class="n">BranchRegisterResponse</span> <span class="n">response</span> <span class="o">=</span> <span class="o">(</span><span class="n">BranchRegisterResponse</span><span class="o">)</span> <span class="n">RmRpcClient</span><span class="o">.</span><span class="na">getInstance</span><span class="o">().</span><span class="na">sendMsgWithResponse</span><span class="o">(</span><span class="n">request</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">response</span><span class="o">.</span><span class="na">getResultCode</span><span class="o">()</span> <span class="o">==</span> <span class="n">ResultCode</span><span class="o">.</span><span class="na">Failed</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nf">TransactionException</span><span class="o">(</span><span class="n">response</span><span class="o">.</span><span class="na">getTransactionExceptionCode</span><span class="o">(),</span> <span class="s">"Response["</span> <span class="o">+</span> <span class="n">response</span><span class="o">.</span><span class="na">getMsg</span><span class="o">()</span> <span class="o">+</span> <span class="s">"]"</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="na">getBranchId</span><span class="o">();</span>
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">TimeoutException</span> <span class="n">toe</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nf">TransactionException</span><span class="o">(</span><span class="n">TransactionExceptionCode</span><span class="o">.</span><span class="na">IO</span><span class="o">,</span> <span class="s">"RPC Timeout"</span><span class="o">,</span> <span class="n">toe</span><span class="o">);</span>
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">RuntimeException</span> <span class="n">rex</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nf">TransactionException</span><span class="o">(</span><span class="n">TransactionExceptionCode</span><span class="o">.</span><span class="na">BranchRegisterFailed</span><span class="o">,</span> <span class="s">"Runtime"</span><span class="o">,</span> <span class="n">rex</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>让我们看看 TC 端那边的处理分支事务注册的逻辑</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@Override</span>
+<span class="kd">protected</span> <span class="kt">void</span> <span class="nf">doBranchRegister</span><span class="o">(</span><span class="n">BranchRegisterRequest</span> <span class="n">request</span><span class="o">,</span> <span class="n">BranchRegisterResponse</span> <span class="n">response</span><span class="o">,</span>
+                                <span class="n">RpcContext</span> <span class="n">rpcContext</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+    <span class="n">response</span><span class="o">.</span><span class="na">setTransactionId</span><span class="o">(</span><span class="n">request</span><span class="o">.</span><span class="na">getTransactionId</span><span class="o">());</span>
+    <span class="n">response</span><span class="o">.</span><span class="na">setBranchId</span><span class="o">(</span>
+        <span class="n">core</span><span class="o">.</span><span class="na">branchRegister</span><span class="o">(</span><span class="n">request</span><span class="o">.</span><span class="na">getBranchType</span><span class="o">(),</span> <span class="n">request</span><span class="o">.</span><span class="na">getResourceId</span><span class="o">(),</span> <span class="n">rpcContext</span><span class="o">.</span><span class="na">getClientId</span><span class="o">(),</span>
+            <span class="n">XID</span><span class="o">.</span><span class="na">generateXID</span><span class="o">(</span><span class="n">request</span><span class="o">.</span><span class="na">getTransactionId</span><span class="o">()),</span> <span class="n">request</span><span class="o">.</span><span class="na">getLockKey</span><span class="o">()));</span>
+
+<span class="o">}</span>
+
+<span class="nd">@Override</span>
+<span class="kd">public</span> <span class="n">Long</span> <span class="nf">branchRegister</span><span class="o">(</span><span class="n">BranchType</span> <span class="n">branchType</span><span class="o">,</span> <span class="n">String</span> <span class="n">resourceId</span><span class="o">,</span> <span class="n">String</span> <span class="n">clientId</span><span class="o">,</span> <span class="n">String</span> <span class="n">xid</span><span class="o">,</span> <span class="n">String</span> <span class="n">lockKeys</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+    <span class="c1">// 断言全局事务是否存在，找出全局事务</span>
+    <span class="n">GlobalSession</span> <span class="n">globalSession</span> <span class="o">=</span> <span class="n">assertGlobalSession</span><span class="o">(</span><span class="n">XID</span><span class="o">.</span><span class="na">getTransactionId</span><span class="o">(</span><span class="n">xid</span><span class="o">),</span> <span class="n">GlobalStatus</span><span class="o">.</span><span class="na">Begin</span><span class="o">);</span>
+
+    <span class="n">BranchSession</span> <span class="n">branchSession</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BranchSession</span><span class="o">();</span>
+    <span class="n">branchSession</span><span class="o">.</span><span class="na">setTransactionId</span><span class="o">(</span><span class="n">XID</span><span class="o">.</span><span class="na">getTransactionId</span><span class="o">(</span><span class="n">xid</span><span class="o">));</span>
+    <span class="c1">// 生成分支id</span>
+    <span class="n">branchSession</span><span class="o">.</span><span class="na">setBranchId</span><span class="o">(</span><span class="n">UUIDGenerator</span><span class="o">.</span><span class="na">generateUUID</span><span class="o">());</span>
+    <span class="n">branchSession</span><span class="o">.</span><span class="na">setApplicationId</span><span class="o">(</span><span class="n">globalSession</span><span class="o">.</span><span class="na">getApplicationId</span><span class="o">());</span>
+    <span class="n">branchSession</span><span class="o">.</span><span class="na">setTxServiceGroup</span><span class="o">(</span><span class="n">globalSession</span><span class="o">.</span><span class="na">getTransactionServiceGroup</span><span class="o">());</span>
+    <span class="n">branchSession</span><span class="o">.</span><span class="na">setBranchType</span><span class="o">(</span><span class="n">branchType</span><span class="o">);</span>
+    <span class="n">branchSession</span><span class="o">.</span><span class="na">setResourceId</span><span class="o">(</span><span class="n">resourceId</span><span class="o">);</span>
+    <span class="n">branchSession</span><span class="o">.</span><span class="na">setLockKey</span><span class="o">(</span><span class="n">lockKeys</span><span class="o">);</span>
+    <span class="n">branchSession</span><span class="o">.</span><span class="na">setClientId</span><span class="o">(</span><span class="n">clientId</span><span class="o">);</span>
+
+    <span class="c1">// 如果分支事务已经被锁了，即注册失败。</span>
+    <span class="k">if</span> <span class="o">(!</span><span class="n">branchSession</span><span class="o">.</span><span class="na">lock</span><span class="o">())</span> <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nf">TransactionException</span><span class="o">(</span><span class="n">LockKeyConflict</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">globalSession</span><span class="o">.</span><span class="na">addBranch</span><span class="o">(</span><span class="n">branchSession</span><span class="o">);</span>
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">RuntimeException</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nf">TransactionException</span><span class="o">(</span><span class="n">FailedToAddBranch</span><span class="o">);</span>
+
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="n">branchSession</span><span class="o">.</span><span class="na">getBranchId</span><span class="o">();</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>看完了 <code class="highlighter-rouge">commit()</code> 方法，我们接下来看一下 <code class="highlighter-rouge">report()</code> 方法。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">private</span> <span class="kt">void</span> <span class="nf">report</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">commitDone</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">SQLException</span> <span class="o">{</span>
+    <span class="kt">int</span> <span class="n">retry</span> <span class="o">=</span> <span class="mi">5</span><span class="o">;</span> <span class="c1">// TODO: configure</span>
+    <span class="k">while</span> <span class="o">(</span><span class="n">retry</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">DataSourceManager</span><span class="o">.</span><span class="na">get</span><span class="o">().</span><span class="na">branchReport</span><span class="o">(</span><span class="n">context</span><span class="o">.</span><span class="na">getXid</span><span class="o">(),</span> <span class="n">context</span><span class="o">.</span><span class="na">getBranchId</span><span class="o">(),</span>
+                <span class="c1">// 提交成功就返回一阶段完成，失败则返回一阶段失败。</span>
+                <span class="o">(</span><span class="n">commitDone</span> <span class="o">?</span> <span class="n">BranchStatus</span><span class="o">.</span><span class="na">PhaseOne_Done</span> <span class="o">:</span> <span class="n">BranchStatus</span><span class="o">.</span><span class="na">PhaseOne_Failed</span><span class="o">),</span> <span class="kc">null</span><span class="o">);</span>
+            <span class="k">return</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Throwable</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">LOGGER</span><span class="o">.</span><span class="na">error</span><span class="o">(</span><span class="s">"Failed to report ["</span> <span class="o">+</span> <span class="n">context</span><span class="o">.</span><span class="na">getBranchId</span><span class="o">()</span> <span class="o">+</span> <span class="s">"/"</span> <span class="o">+</span> <span class="n">context</span><span class="o">.</span><span class="na">getXid</span><span class="o">()</span> <span class="o">+</span> <span class="s">"] commit done ["</span> <span class="o">+</span> <span class="n">commitDone</span> <span class="o">+</span> <span class="s">"] Retry Countdown: "</span> <span class="o">+</span> <span class="n">retry</span><span class="o">);</span>
+            <span class="n">retry</span><span class="o">--;</span>
+
+            <span class="k">if</span> <span class="o">(</span><span class="n">retry</span> <span class="o">==</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="nf">SQLException</span><span class="o">(</span><span class="s">"Failed to report branch status "</span> <span class="o">+</span> <span class="n">commitDone</span><span class="o">,</span> <span class="n">ex</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="nd">@Override</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">branchReport</span><span class="o">(</span><span class="n">String</span> <span class="n">xid</span><span class="o">,</span> <span class="kt">long</span> <span class="n">branchId</span><span class="o">,</span> <span class="n">BranchStatus</span> <span class="n">status</span><span class="o">,</span> <span class="n">String</span> <span class="n">applicationData</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">BranchReportRequest</span> <span class="n">request</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BranchReportRequest</span><span class="o">();</span>
+        <span class="n">request</span><span class="o">.</span><span class="na">setTransactionId</span><span class="o">(</span><span class="n">XID</span><span class="o">.</span><span class="na">getTransactionId</span><span class="o">(</span><span class="n">xid</span><span class="o">));</span>
+        <span class="c1">// 放入注册时 TC 返回的 branchId</span>
+        <span class="n">request</span><span class="o">.</span><span class="na">setBranchId</span><span class="o">(</span><span class="n">branchId</span><span class="o">);</span>
+        <span class="n">request</span><span class="o">.</span><span class="na">setStatus</span><span class="o">(</span><span class="n">status</span><span class="o">);</span>
+        <span class="c1">// 这里的 applicationData 为 null</span>
+        <span class="n">request</span><span class="o">.</span><span class="na">setApplicationData</span><span class="o">(</span><span class="n">applicationData</span><span class="o">);</span>
+
+        <span class="n">BranchReportResponse</span> <span class="n">response</span> <span class="o">=</span> <span class="o">(</span><span class="n">BranchReportResponse</span><span class="o">)</span> <span class="n">RmRpcClient</span><span class="o">.</span><span class="na">getInstance</span><span class="o">().</span><span class="na">sendMsgWithResponse</span><span class="o">(</span><span class="n">request</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">response</span><span class="o">.</span><span class="na">getResultCode</span><span class="o">()</span> <span class="o">==</span> <span class="n">ResultCode</span><span class="o">.</span><span class="na">Failed</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nf">TransactionException</span><span class="o">(</span><span class="n">response</span><span class="o">.</span><span class="na">getTransactionExceptionCode</span><span class="o">(),</span> <span class="s">"Response["</span> <span class="o">+</span> <span class="n">response</span><span class="o">.</span><span class="na">getMsg</span><span class="o">()</span> <span class="o">+</span> <span class="s">"]"</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">TimeoutException</span> <span class="n">toe</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nf">TransactionException</span><span class="o">(</span><span class="n">TransactionExceptionCode</span><span class="o">.</span><span class="na">IO</span><span class="o">,</span> <span class="s">"RPC Timeout"</span><span class="o">,</span> <span class="n">toe</span><span class="o">);</span>
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">RuntimeException</span> <span class="n">rex</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nf">TransactionException</span><span class="o">(</span><span class="n">TransactionExceptionCode</span><span class="o">.</span><span class="na">BranchReportFailed</span><span class="o">,</span> <span class="s">"Runtime"</span><span class="o">,</span> <span class="n">rex</span><span class="o">);</span>
+    <span class="o">}</span>
+
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>我们看一下 TC 端的处理 <code class="highlighter-rouge">report()</code> 的逻辑</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nd">@Override</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">branchReport</span><span class="o">(</span><span class="n">String</span> <span class="n">xid</span><span class="o">,</span> <span class="kt">long</span> <span class="n">branchId</span><span class="o">,</span> <span class="n">BranchStatus</span> <span class="n">status</span><span class="o">,</span> <span class="n">String</span> <span class="n">applicationData</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+    <span class="c1">// 根据 xid 取到 GlobalSession</span>
+    <span class="n">GlobalSession</span> <span class="n">globalSession</span> <span class="o">=</span> <span class="n">SessionHolder</span><span class="o">.</span><span class="na">findGlobalSession</span><span class="o">(</span><span class="n">XID</span><span class="o">.</span><span class="na">getTransactionId</span><span class="o">(</span><span class="n">xid</span><span class="o">));</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">globalSession</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nf">TransactionException</span><span class="o">(</span><span class="n">TransactionExceptionCode</span><span class="o">.</span><span class="na">GlobalTransactionNotExist</span><span class="o">,</span> <span class="s">""</span> <span class="o">+</span> <span class="n">XID</span><span class="o">.</span><span class="na">getTransactionId</span><span class="o">(</span><span class="n">xid</span><span class="o">)</span> <span class="o">+</span> <span class="s">""</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="c1">// 根据 branchId 获取到 branchSession</span>
+    <span class="n">BranchSession</span> <span class="n">branchSession</span> <span class="o">=</span> <span class="n">globalSession</span><span class="o">.</span><span class="na">getBranch</span><span class="o">(</span><span class="n">branchId</span><span class="o">);</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">branchSession</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nf">TransactionException</span><span class="o">(</span><span class="n">BranchTransactionNotExist</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="c1">// 改变分支状态</span>
+    <span class="n">globalSession</span><span class="o">.</span><span class="na">changeBranchStatus</span><span class="o">(</span><span class="n">branchSession</span><span class="o">,</span> <span class="n">status</span><span class="o">);</span>
+<span class="o">}</span>
+
+<span class="nd">@Override</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">changeBranchStatus</span><span class="o">(</span><span class="n">BranchSession</span> <span class="n">branchSession</span><span class="o">,</span> <span class="n">BranchStatus</span> <span class="n">status</span><span class="o">)</span>
+    <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+    <span class="c1">// 生命周期监听器</span>
+    <span class="k">for</span> <span class="o">(</span><span class="n">SessionLifecycleListener</span> <span class="n">lifecycleListener</span> <span class="o">:</span> <span class="n">lifecycleListeners</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// 监听其分支状态改变</span>
+        <span class="n">lifecycleListener</span><span class="o">.</span><span class="na">onBranchStatusChange</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">branchSession</span><span class="o">,</span> <span class="n">status</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="c1">// 分支 session 的状态变更</span>
+    <span class="n">branchSession</span><span class="o">.</span><span class="na">setStatus</span><span class="o">(</span><span class="n">status</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>今天我们就先写这么多吧，下一章节我们详细写第一章未展开的 TM 和 TC 的一些通信过程。</p>
+
+<h3 id="后续补充">后续补充</h3>
+<ol>
+  <li>xid 的传递</li>
+  <li>undoLog 的实现</li>
+  <li>TC 锁的原理</li>
+  <li>隔离性</li>
+  <li>RM 和 TC 的 netty 封装</li>
+</ol>
