@@ -113,10 +113,37 @@
 
 <h3 id="阅读内容">阅读内容</h3>
 
+<ul>
+  <li>TC 锁的入口代码解析</li>
+</ul>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// 分支事务注册，lockkeys=tbName:pks;tbName1:pks1;tbName2:pks2</span>
+<span class="nd">@Override</span>
+<span class="kd">public</span> <span class="n">Long</span> <span class="nf">branchRegister</span><span class="o">(</span><span class="n">BranchType</span> <span class="n">branchType</span><span class="o">,</span> <span class="n">String</span> <span class="n">resourceId</span><span class="o">,</span> <span class="n">String</span> <span class="n">clientId</span><span class="o">,</span> <span class="n">String</span> <span class="n">xid</span><span class="o">,</span> <span class="n">String</span> <span class="n">lockKeys</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">TransactionException</span> <span class="o">{</span>
+    <span class="c1">// 断言全局事务是否存在</span>
+    <span class="n">GlobalSession</span> <span class="n">globalSession</span> <span class="o">=</span> <span class="n">assertGlobalSession</span><span class="o">(</span><span class="n">XID</span><span class="o">.</span><span class="na">getTransactionId</span><span class="o">(</span><span class="n">xid</span><span class="o">),</span> <span class="n">GlobalStatus</span><span class="o">.</span><span class="na">Begin</span><span class="o">);</span>
+
+    <span class="n">BranchSession</span> <span class="n">branchSession</span> <span class="o">=</span> <span class="n">SessionHelper</span><span class="o">.</span><span class="na">newBranchByGlobal</span><span class="o">(</span><span class="n">globalSession</span><span class="o">,</span> <span class="n">branchType</span><span class="o">,</span> <span class="n">resourceId</span><span class="o">,</span> <span class="n">lockKeys</span><span class="o">,</span> <span class="n">clientId</span><span class="o">);</span>
+
+    <span class="c1">// 判断锁是否存在，是否被锁</span>
+    <span class="k">if</span> <span class="o">(!</span><span class="n">branchSession</span><span class="o">.</span><span class="na">lock</span><span class="o">())</span> <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nf">TransactionException</span><span class="o">(</span><span class="n">LockKeyConflict</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">globalSession</span><span class="o">.</span><span class="na">addBranch</span><span class="o">(</span><span class="n">branchSession</span><span class="o">);</span>
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">RuntimeException</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nf">TransactionException</span><span class="o">(</span><span class="n">FailedToAddBranch</span><span class="o">);</span>
+
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="n">branchSession</span><span class="o">.</span><span class="na">getBranchId</span><span class="o">();</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
 <h3 id="后续补充">后续补充</h3>
 <ol>
   <li>隔离性</li>
   <li>RM 和 TC 的 netty 封装</li>
+  <li>故障恢复（0.5.x版本后）</li>
 </ol>
 
     </article>
